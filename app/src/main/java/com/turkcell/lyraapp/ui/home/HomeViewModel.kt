@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.auth.AuthRepository
 import com.turkcell.lyraapp.data.home.HomeRepository
+import com.turkcell.lyraapp.data.player.NowPlayingTrack
+import com.turkcell.lyraapp.data.player.PlayerRepository
 import com.turkcell.lyraapp.data.theme.ThemeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +24,7 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val authRepository: AuthRepository,
     private val themeRepository: ThemeRepository,
+    private val playerRepository: PlayerRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(greeting = greetingForNow()))
@@ -33,6 +36,7 @@ class HomeViewModel @Inject constructor(
     init {
         loadFeed()
         observeTheme()
+        observeCurrentTrack()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -40,6 +44,11 @@ class HomeViewModel @Inject constructor(
             is HomeIntent.Retry -> loadFeed()
             is HomeIntent.Logout -> logout()
             is HomeIntent.ToggleTheme -> toggleTheme()
+            is HomeIntent.PlayTrack -> playTrack(intent.track, intent.queue)
+            is HomeIntent.OpenNowPlaying -> viewModelScope.launch {
+                _effect.send(HomeEffect.NavigateToNowPlaying)
+            }
+            is HomeIntent.SkipNext -> playerRepository.skipNext()
         }
     }
 
@@ -86,6 +95,20 @@ class HomeViewModel @Inject constructor(
 
     private fun toggleTheme() {
         themeRepository.toggleTheme()
+    }
+
+    private fun observeCurrentTrack() {
+        viewModelScope.launch {
+            playerRepository.currentTrack.collect { track ->
+                _uiState.update { it.copy(currentTrack = track) }
+            }
+        }
+    }
+
+    private fun playTrack(track: NowPlayingTrack, queue: List<NowPlayingTrack>) {
+        val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        playerRepository.playQueue(queue, startIndex)
+        viewModelScope.launch { _effect.send(HomeEffect.NavigateToNowPlaying) }
     }
 
     private fun logout() {

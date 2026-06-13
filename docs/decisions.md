@@ -65,6 +65,35 @@
   olmadan derlemeyi kırar. Bayrak deneysel (experimental) olarak işaretlidir ancak gereklidir.
 
 
+### Now Playing Ekrani
+
+- Karar: MVI mimarisi; calınan sarki bilgisi singleton `PlayerRepository` uzerinden paylasılır.
+
+- Son Güncelleme Tarihi: 13.06.2026
+
+- Kapsam: `data/player/` (NowPlayingTrack, PlayerRepository, InMemoryPlayerRepository),
+  `ui/nowplaying/` (NowPlayingContract, NowPlayingViewModel, NowPlayingScreen), `di/PlayerModule`.
+  `HomeContract`, `HomeViewModel`, `HomeScreen` guncellendi.
+
+- Neden PlayerRepository: Navigation argument yerine singleton state kullanilir;
+  HomeScreen MiniPlayer ve NowPlayingScreen ayni StateFlow'u gozlemler, gecis sirasinda
+  sarki bilgisi kaybolmaz.
+
+- Tiklanabilir kartlar: QuickPick, RecentlyPlayed, PlaylistForYou tiklamalari
+  `HomeIntent.PlayTrack(track, queue)` uretir; ViewModel `playerRepository.playQueue()` cagirir
+  ve `HomeEffect.NavigateToNowPlaying` gonderir. `queue`, tiklanilan section'ın tum track
+  listesidir (QuickPicks tiklandıgında queue = tum QuickPicks, vs.).
+
+- Sonraki/Onceki: `PlayerRepository.skipNext()` / `skipPrevious()` index kaydırarak
+  `_currentTrack`'i gunceller. `NowPlayingViewModel` bu cagriyi yapar; UI otomatik guncellenir.
+
+- MiniPlayer: Yalnizca `state.currentTrack != null` iken gozukur; tiklandıgında
+  `HomeIntent.OpenNowPlaying` → `HomeEffect.NavigateToNowPlaying` akar.
+
+- Sebep: Backend hazır degil; oynatma mantigi (konum, sure) mock degerlerle simule edilir.
+  Gercek API geldiginde yalnizca `InMemoryPlayerRepository` degisir.
+
+
 ### Ara Ekrani (Search Screen)
 
 - Karar: MVI mimarisi ile implementasyon; stub repository deseni.

@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.turkcell.lyraapp.ui.auth.login.LoginRoute
 import com.turkcell.lyraapp.ui.auth.register.RegisterRoute
 import com.turkcell.lyraapp.ui.home.HomeRoute
+import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
 import com.turkcell.lyraapp.ui.search.SearchRoute
 
 @Composable
@@ -81,7 +82,18 @@ fun LyraNavHost(
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    onToggleTheme = onThemeToggle
+                    onNavigateToNowPlaying = {
+                        navController.navigate(LyraDestination.NowPlaying.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onToggleTheme = onThemeToggle,
+                )
+            }
+
+            composable(LyraDestination.NowPlaying.route) {
+                NowPlayingRoute(
+                    onNavigateBack = { navController.popBackStack() },
                 )
             }
 

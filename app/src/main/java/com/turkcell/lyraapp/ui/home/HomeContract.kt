@@ -3,6 +3,7 @@ package com.turkcell.lyraapp.ui.home
 import com.turkcell.lyraapp.data.home.PlaylistForYou
 import com.turkcell.lyraapp.data.home.QuickPick
 import com.turkcell.lyraapp.data.home.RecentlyPlayed
+import com.turkcell.lyraapp.data.player.NowPlayingTrack
 
 
 data class HomeUiState(
@@ -13,15 +14,20 @@ data class HomeUiState(
     val quickPicks: List<QuickPick> = emptyList(),
     val recentlyPlayed: List<RecentlyPlayed> = emptyList(),
     val playlistsForYou: List<PlaylistForYou> = emptyList(),
+    val currentTrack: NowPlayingTrack? = null,
 )
 
 sealed interface HomeIntent {
     data object Retry : HomeIntent
     data object Logout : HomeIntent
     data object ToggleTheme : HomeIntent
+    data class PlayTrack(val track: NowPlayingTrack, val queue: List<NowPlayingTrack>) : HomeIntent
+    data object OpenNowPlaying : HomeIntent
+    data object SkipNext : HomeIntent
 }
 
 sealed interface HomeEffect {
     data class ShowError(val message: String) : HomeEffect
     data object NavigateToLogin : HomeEffect
+    data object NavigateToNowPlaying : HomeEffect
 }

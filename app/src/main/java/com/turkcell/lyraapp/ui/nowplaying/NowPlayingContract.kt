@@ -1,0 +1,28 @@
+package com.turkcell.lyraapp.ui.nowplaying
+
+import com.turkcell.lyraapp.data.player.NowPlayingTrack
+
+data class NowPlayingUiState(
+    val track: NowPlayingTrack? = null,
+    val isPlaying: Boolean = true,
+    val isFavorited: Boolean = false,
+    val isShuffling: Boolean = false,
+    val isRepeating: Boolean = false,
+    val progress: Float = 0f,
+    val currentPositionMs: Long = 0L,
+)
+
+sealed interface NowPlayingIntent {
+    data object TogglePlayPause : NowPlayingIntent
+    data object ToggleFavorite : NowPlayingIntent
+    data object ToggleShuffle : NowPlayingIntent
+    data object ToggleRepeat : NowPlayingIntent
+    data class SeekTo(val progress: Float) : NowPlayingIntent
+    data object SkipPrevious : NowPlayingIntent
+    data object SkipNext : NowPlayingIntent
+    data object Dismiss : NowPlayingIntent
+}
+
+sealed interface NowPlayingEffect {
+    data object NavigateBack : NowPlayingEffect
+}

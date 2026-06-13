@@ -97,6 +97,79 @@ object LyraIcons {
         )
     }
 
+    val ChevronDown: ImageVector by lazy {
+        lyraIcon(
+            name = "ChevronDown",
+            pathData = "M7.41,8.58L12,13.17l4.59,-4.59L18,10l-6,6l-6,-6L7.41,8.58z",
+        )
+    }
+
+    val MoreVert: ImageVector by lazy {
+        lyraIcon(
+            name = "MoreVert",
+            pathData = "M12,8c1.1,0 2,-0.9 2,-2s-0.9,-2 -2,-2 -2,0.9 -2,2 0.9,2 2,2z" +
+                    "M12,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z" +
+                    "M12,16c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z",
+        )
+    }
+
+    val Play: ImageVector by lazy {
+        lyraIcon(
+            name = "Play",
+            pathData = "M8,5v14l11,-7z",
+        )
+    }
+
+    val SkipPrevious: ImageVector by lazy {
+        lyraIcon(
+            name = "SkipPrevious",
+            pathData = "M6,6h2v12H6V6zM9.5,12l8.5,6V6L9.5,12z",
+        )
+    }
+
+    val Shuffle: ImageVector by lazy {
+        lyraIcon(
+            name = "Shuffle",
+            pathData = "M10.59,9.17L5.41,4L4,5.41l5.17,5.17L10.59,9.17z" +
+                    "M14.5,4l2.04,2.04L4,18.59L5.41,20L17.96,7.46L20,9.5V4H14.5z" +
+                    "M14.83,13.41l-1.41,1.41l3.13,3.13L14.5,20H20v-5.5l-2.04,2.04L14.83,13.41z",
+        )
+    }
+
+    val Repeat: ImageVector by lazy {
+        lyraIcon(
+            name = "Repeat",
+            pathData = "M7,7h10v3l4,-4l-4,-4v3H5v6h2V7zM17,17H7v-3l-4,4l4,4v-3h12v-6h-2V17z",
+        )
+    }
+
+    val Cast: ImageVector by lazy {
+        lyraIcon(
+            name = "Cast",
+            pathData = "M1,18v3h3c0,-1.66 -1.34,-3 -3,-3z" +
+                    "M1,14v2c2.76,0 5,2.24 5,5h2c0,-3.87 -3.13,-7 -7,-7z" +
+                    "M1,10v2c4.97,0 9,4.03 9,9h2c0,-6.08 -4.93,-11 -11,-11z" +
+                    "M21,3H3C1.9,3 1,3.9 1,5v3h2V5h18v14h-7v2h7c1.1,0 2,-0.9 2,-2V5C23,3.9 22.1,3 21,3z",
+        )
+    }
+
+    val QueueMusic: ImageVector by lazy {
+        lyraIcon(
+            name = "QueueMusic",
+            pathData = "M15,6H3v2h12V6zM15,10H3v2h12V10zM3,16h8v-2H3V16z" +
+                    "M17,6v8.18C16.69,14.07 16.35,14 16,14c-1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3V8h3V6H17z",
+        )
+    }
+
+    val Notifications: ImageVector by lazy {
+        lyraIcon(
+            name = "Notifications",
+            pathData = "M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2z" +
+                    "M18,16v-5c0,-3.07 -1.64,-5.64 -4.5,-6.32V4c0,-0.83 -0.67,-1.5 -1.5,-1.5s-1.5,0.67 -1.5,1.5v0.68" +
+                    "C7.63,5.36 6,7.92 6,11v5l-2,2v1h16v-1l-2,-2z",
+        )
+    }
+
     val Check: ImageVector by lazy {
         lyraIcon(
             name = "Check",

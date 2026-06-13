@@ -30,11 +30,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.turkcell.lyraapp.data.home.PlaylistForYou
 import com.turkcell.lyraapp.data.home.QuickPick
 import com.turkcell.lyraapp.data.home.RecentlyPlayed
+import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.ui.icons.LyraIcons
 
 @Composable
 fun HomeRoute(
     onNavigateToLogin: () -> Unit,
+    onNavigateToNowPlaying: () -> Unit,
     onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -45,17 +47,16 @@ fun HomeRoute(
         viewModel.effect.collect { effect ->
             when (effect) {
                 HomeEffect.NavigateToLogin -> onNavigateToLogin()
-                is HomeEffect.ShowError -> {
-                }
+                HomeEffect.NavigateToNowPlaying -> onNavigateToNowPlaying()
+                is HomeEffect.ShowError -> {}
             }
         }
     }
 
-
     HomeScreen(
         state = uiState,
         onIntent = viewModel::onIntent,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -89,26 +90,51 @@ fun HomeScreen(
                         onToggleTheme = { onIntent(HomeIntent.ToggleTheme) }
                     )
 
-                    QuickPicksGrid(items = state.quickPicks, isDarkMode = state.isDarkMode)
+                    val quickPickTracks = state.quickPicks.map { qp ->
+                        NowPlayingTrack(id = qp.id, title = qp.title, subtitle = "", startColor = qp.artworkStartColor, endColor = qp.artworkEndColor)
+                    }
+                    val recentlyPlayedTracks = state.recentlyPlayed.map { rp ->
+                        NowPlayingTrack(id = rp.id, title = rp.title, subtitle = rp.subtitle, startColor = rp.artworkStartColor, endColor = rp.artworkEndColor)
+                    }
+                    val playlistTracks = state.playlistsForYou.map { pl ->
+                        NowPlayingTrack(id = pl.id, title = pl.title, subtitle = "", startColor = pl.artworkStartColor, endColor = pl.artworkEndColor)
+                    }
+
+                    QuickPicksGrid(
+                        items = state.quickPicks,
+                        isDarkMode = state.isDarkMode,
+                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, quickPickTracks)) },
+                    )
 
                     SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
                     RecentlyPlayedList(
                         items = state.recentlyPlayed,
-                        isDarkMode = state.isDarkMode
+                        isDarkMode = state.isDarkMode,
+                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
                     )
 
                     SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
-                    PlaylistsList(items = state.playlistsForYou, isDarkMode = state.isDarkMode)
+                    PlaylistsList(
+                        items = state.playlistsForYou,
+                        isDarkMode = state.isDarkMode,
+                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, playlistTracks)) },
+                    )
 
                     Spacer(Modifier.height(100.dp))
                 }
 
-                MiniPlayer(
-                    title = "Neon Sokaklar",
-                    artist = "Şehir Işıkları",
-                    isDarkMode = state.isDarkMode,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
+                state.currentTrack?.let { track ->
+                    MiniPlayer(
+                        title = track.title,
+                        artist = track.subtitle,
+                        startColor = track.startColor,
+                        endColor = track.endColor,
+                        isDarkMode = state.isDarkMode,
+                        onClick = { onIntent(HomeIntent.OpenNowPlaying) },
+                        onSkipNext = { onIntent(HomeIntent.SkipNext) },
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                    )
+                }
             }
         }
     }
@@ -169,13 +195,17 @@ private fun HomeHeader(
 }
 
 @Composable
-private fun QuickPicksGrid(items: List<QuickPick>, isDarkMode: Boolean) {
+private fun QuickPicksGrid(
+    items: List<QuickPick>,
+    isDarkMode: Boolean,
+    onTrackClick: (NowPlayingTrack) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         for (i in items.indices step 2) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                QuickPickCard(item = items[i], isDarkMode = isDarkMode, modifier = Modifier.weight(1f))
+                QuickPickCard(item = items[i], isDarkMode = isDarkMode, onTrackClick = onTrackClick, modifier = Modifier.weight(1f))
                 if (i + 1 < items.size) {
-                    QuickPickCard(item = items[i + 1], isDarkMode = isDarkMode, modifier = Modifier.weight(1f))
+                    QuickPickCard(item = items[i + 1], isDarkMode = isDarkMode, onTrackClick = onTrackClick, modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -183,12 +213,28 @@ private fun QuickPicksGrid(items: List<QuickPick>, isDarkMode: Boolean) {
 }
 
 @Composable
-private fun QuickPickCard(item: QuickPick, isDarkMode: Boolean, modifier: Modifier = Modifier) {
+private fun QuickPickCard(
+    item: QuickPick,
+    isDarkMode: Boolean,
+    onTrackClick: (NowPlayingTrack) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier
             .height(56.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isDarkMode) Color(0xFF2A2A2A) else Color(0xFFE0E0E0)),
+            .background(if (isDarkMode) Color(0xFF2A2A2A) else Color(0xFFE0E0E0))
+            .clickable {
+                onTrackClick(
+                    NowPlayingTrack(
+                        id = item.id,
+                        title = item.title,
+                        subtitle = "",
+                        startColor = item.artworkStartColor,
+                        endColor = item.artworkEndColor,
+                    )
+                )
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         DynamicMusicCardBackground(
@@ -234,11 +280,26 @@ private fun SectionHeader(title: String, isDarkMode: Boolean) {
 @Composable
 private fun RecentlyPlayedList(
     items: List<RecentlyPlayed>,
-    isDarkMode: Boolean
+    isDarkMode: Boolean,
+    onTrackClick: (NowPlayingTrack) -> Unit,
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         items(items) { item ->
-            Column(modifier = Modifier.width(160.dp)) {
+            Column(
+                modifier = Modifier
+                    .width(160.dp)
+                    .clickable {
+                        onTrackClick(
+                            NowPlayingTrack(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = item.subtitle,
+                                startColor = item.artworkStartColor,
+                                endColor = item.artworkEndColor,
+                            )
+                        )
+                    },
+            ) {
                 Box(
                     modifier = Modifier
                         .size(160.dp)
@@ -272,10 +333,28 @@ private fun RecentlyPlayedList(
 }
 
 @Composable
-private fun PlaylistsList(items: List<PlaylistForYou>, isDarkMode: Boolean) {
+private fun PlaylistsList(
+    items: List<PlaylistForYou>,
+    isDarkMode: Boolean,
+    onTrackClick: (NowPlayingTrack) -> Unit,
+) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         items(items) { item ->
-            Column(modifier = Modifier.width(160.dp)) {
+            Column(
+                modifier = Modifier
+                    .width(160.dp)
+                    .clickable {
+                        onTrackClick(
+                            NowPlayingTrack(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = "",
+                                startColor = item.artworkStartColor,
+                                endColor = item.artworkEndColor,
+                            )
+                        )
+                    },
+            ) {
                 Box(
                     modifier = Modifier
                         .size(160.dp)
@@ -357,11 +436,21 @@ private fun DynamicMusicCardBackground(
 }
 
 @Composable
-private fun MiniPlayer(title: String, artist: String, isDarkMode: Boolean, modifier: Modifier = Modifier) {
+private fun MiniPlayer(
+    title: String,
+    artist: String,
+    startColor: Long,
+    endColor: Long,
+    isDarkMode: Boolean,
+    onClick: () -> Unit,
+    onSkipNext: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (isDarkMode) Color(0xFF2A2121) else Color(0xFFEEEEEE)
         ),
@@ -378,7 +467,7 @@ private fun MiniPlayer(title: String, artist: String, isDarkMode: Boolean, modif
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Brush.verticalGradient(listOf(Color(0xFFD98E4A), Color(0xFF8A5526)))),
+                    .background(Brush.verticalGradient(listOf(Color(startColor), Color(endColor)))),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -418,12 +507,14 @@ private fun MiniPlayer(title: String, artist: String, isDarkMode: Boolean, modif
                 modifier = Modifier.size(28.dp)
             )
             Spacer(Modifier.width(16.dp))
-            Icon(
-                imageVector = LyraIcons.SkipNext,
-                contentDescription = null,
-                tint = if (isDarkMode) Color.White else Color.Black,
-                modifier = Modifier.size(28.dp)
-            )
+            IconButton(onClick = onSkipNext) {
+                Icon(
+                    imageVector = LyraIcons.SkipNext,
+                    contentDescription = "Sonraki",
+                    tint = if (isDarkMode) Color.White else Color.Black,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
     }
 }

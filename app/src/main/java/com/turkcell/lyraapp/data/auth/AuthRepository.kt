@@ -12,6 +12,7 @@ interface AuthRepository {
 
     /**
      * Verilen kullanıcı bilgileriyle yeni bir hesap oluşturmayı dener.
+
      */
     suspend fun register(
         firstName: String,

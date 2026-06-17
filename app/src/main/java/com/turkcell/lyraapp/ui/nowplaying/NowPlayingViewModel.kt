@@ -2,6 +2,7 @@ package com.turkcell.lyraapp.ui.nowplaying
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -17,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class NowPlayingViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
+    private val favoritesRepository: FavoritesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NowPlayingUiState())
@@ -31,6 +33,7 @@ class NowPlayingViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         track = track,
+                        isFavorited = track?.let { favoritesRepository.isFavorite(it.id) } ?: false,
                         currentPositionMs = (track?.durationMs?.times(state.progress))?.toLong() ?: 0L,
                     )
                 }
@@ -41,12 +44,21 @@ class NowPlayingViewModel @Inject constructor(
                 _uiState.update { it.copy(isPlaying = playing) }
             }
         }
+        viewModelScope.launch {
+            favoritesRepository.favorites.collect { favorites ->
+                val currentId = _uiState.value.track?.id
+                _uiState.update { it.copy(isFavorited = currentId != null && favorites.any { f -> f.id == currentId }) }
+            }
+        }
     }
 
     fun onIntent(intent: NowPlayingIntent) {
         when (intent) {
             is NowPlayingIntent.TogglePlayPause -> playerRepository.togglePlayPause()
-            is NowPlayingIntent.ToggleFavorite -> _uiState.update { it.copy(isFavorited = !it.isFavorited) }
+            is NowPlayingIntent.ToggleFavorite -> {
+                val track = _uiState.value.track ?: return
+                favoritesRepository.toggleFavorite(track)
+            }
             is NowPlayingIntent.ToggleShuffle -> _uiState.update { it.copy(isShuffling = !it.isShuffling) }
             is NowPlayingIntent.ToggleRepeat -> _uiState.update { it.copy(isRepeating = !it.isRepeating) }
             is NowPlayingIntent.SeekTo -> seekTo(intent.progress)

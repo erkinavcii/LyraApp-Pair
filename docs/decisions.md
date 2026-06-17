@@ -111,6 +111,27 @@
   Gercek API geldiginde yalnizca MockSearchRepository ve SearchModule degisir.
 
 
+### Favoriler Ekrani
+
+- Karar: MVI mimarisi; paylasilan singleton `FavoritesRepository` uzerinden favori durumu yonetilir.
+
+- Son Güncelleme Tarihi: 17.06.2026
+
+- Kapsam: `data/favorites/` (FavoritesRepository, InMemoryFavoritesRepository),
+  `ui/favorites/` (FavoritesContract, FavoritesViewModel, FavoritesScreen), `di/FavoritesModule`.
+  `NowPlayingViewModel` guncellendi: FavoritesRepository inject edildi, `ToggleFavorite` Intent
+  artik repository uzerinden calisir; `isFavorited` state favorites Flow'u izlenerek senkronize tutulur.
+
+- Singleton tasarimi: `FavoritesRepository` `@Singleton` olarak baglanir; herhangi bir ekran
+  `NowPlayingTrack` vererek `toggleFavorite()` cagirabilir. Favoriler ekrani ayni StateFlow'u
+  gozlemler, degisiklikler aninda yansir.
+
+- Bos durum: Liste bos oldugunda aciklayici hint gosterilir; Cal/Karistir butonlari devre disi kalir.
+
+- Sebep: Backend hazir degil; `InMemoryFavoritesRepository` uygulama yasam suresi boyunca state tutar.
+  Gercek API geldiginde yalnizca implementasyon ve DI baglamasi degisir.
+
+
 ### Backend Hazır Değilken Veri Katmanı
 
 - Karar: **Stub repository** deseni — Repository interface + `Fake<X>Repository` implementasyonu.

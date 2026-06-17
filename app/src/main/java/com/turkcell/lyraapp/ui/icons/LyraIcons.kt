@@ -249,6 +249,13 @@ object LyraIcons {
         )
     }
 
+    val Download: ImageVector by lazy {
+        lyraIcon(
+            name = "Download",
+            pathData = "M19,9h-4V3H9v6H5l7,7l7,-7zM5,18v2h14v-2H5z",
+        )
+    }
+
     val PersonOutlined: ImageVector by lazy {
         lyraIcon(
             name = "PersonOutlined",

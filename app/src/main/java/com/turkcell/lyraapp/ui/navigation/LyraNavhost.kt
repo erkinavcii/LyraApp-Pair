@@ -18,6 +18,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.turkcell.lyraapp.ui.auth.login.LoginRoute
 import com.turkcell.lyraapp.ui.auth.register.RegisterRoute
+import com.turkcell.lyraapp.ui.favorites.FavoritesRoute
 import com.turkcell.lyraapp.ui.home.HomeRoute
 import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
 import com.turkcell.lyraapp.ui.search.SearchRoute
@@ -99,7 +100,16 @@ fun LyraNavHost(
 
             composable(LyraDestination.Search.route) { SearchRoute() }
             composable(LyraDestination.Library.route) { PlaceholderScreen(title = "Kütüphane") }
-            composable(LyraDestination.Favorites.route) { PlaceholderScreen(title = "Favoriler") }
+            composable(LyraDestination.Favorites.route) {
+                FavoritesRoute(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToNowPlaying = {
+                        navController.navigate(LyraDestination.NowPlaying.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(LyraDestination.Profile.route) { PlaceholderScreen(title = "Profil") }
         }
     }

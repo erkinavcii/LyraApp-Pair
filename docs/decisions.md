@@ -132,6 +132,29 @@
   Gercek API geldiginde yalnizca implementasyon ve DI baglamasi degisir.
 
 
+### Profil Ekrani
+
+- Karar: MVI mimarisi; kullanici adi `AuthRepository.getLoggedInUserName()` ile alinir, tema durumu singleton `ThemeRepository` uzerinden izlenir.
+
+- Son Guncelleme Tarihi: 17.06.2026
+
+- Kapsam: `ui/profile/` (ProfileContract, ProfileViewModel, ProfileScreen).
+  `LyraNavhost.kt` guncellendi: Profile rotasi artik `ProfileRoute`'u render eder.
+  `LyraIcons.kt` guncellendi: `Settings` ve `HelpOutline` ikonlari eklendi.
+
+- Tema toggle akisi: `ProfileIntent.ToggleTheme` → `ProfileViewModel` → `ThemeRepository.toggleTheme()`
+  → `MainActivity` recompose → `LyraAppTheme(darkTheme)` → `ProfileViewModel.init` collect ile state senkronize.
+  NavHost uzerinden lambda gecilmez; ViewModel dogrudan ThemeRepository inject eder.
+
+- Gercek veri: Yalnizca kullanici adi (`displayName`, `initials`). Diger alanlar (takipci, takip) placeholder.
+  Calma listesi sayisi `playlistCount: Int = 0` olarak UiState'te tutulur; Kutuphane ekrani tamamlandiginda guncellenir.
+
+- Placeholder satirlar: Ses kalitesi, Cevrimdisi indirme, Bildirimler, Gizlilik, Yardim ve destek
+  MVI kurallarina uygun sekilde Intent tanimlidir; su an no-op olarak islenirler.
+
+- Sebep: Backend hazir degil; gercek API geldiginde yalnizca ViewModel icindeki repository cagrisi degisir.
+
+
 ### Backend Hazır Değilken Veri Katmanı
 
 - Karar: **Stub repository** deseni — Repository interface + `Fake<X>Repository` implementasyonu.

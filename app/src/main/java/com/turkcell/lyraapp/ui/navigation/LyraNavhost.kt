@@ -20,6 +20,9 @@ import com.turkcell.lyraapp.ui.auth.login.LoginRoute
 import com.turkcell.lyraapp.ui.auth.register.RegisterRoute
 import com.turkcell.lyraapp.ui.favorites.FavoritesRoute
 import com.turkcell.lyraapp.ui.home.HomeRoute
+import com.turkcell.lyraapp.ui.library.LibraryRoute
+import com.turkcell.lyraapp.ui.library.create.NewPlaylistRoute
+import com.turkcell.lyraapp.ui.library.detail.PlaylistDetailRoute
 import com.turkcell.lyraapp.ui.profile.ProfileRoute
 import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
 import com.turkcell.lyraapp.ui.search.SearchRoute
@@ -100,7 +103,40 @@ fun LyraNavHost(
             }
 
             composable(LyraDestination.Search.route) { SearchRoute() }
-            composable(LyraDestination.Library.route) { PlaceholderScreen(title = "Kütüphane") }
+            composable(LyraDestination.Library.route) {
+                LibraryRoute(
+                    onNavigateToPlaylistDetail = { playlistId ->
+                        navController.navigate("playlist_detail/$playlistId") {
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateToFavorites = {
+                        navController.navigate(LyraDestination.Favorites.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateToNewPlaylist = {
+                        navController.navigate(LyraDestination.NewPlaylist.route) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(LyraDestination.PlaylistDetail.route) {
+                PlaylistDetailRoute(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToNowPlaying = {
+                        navController.navigate(LyraDestination.NowPlaying.route) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable(LyraDestination.NewPlaylist.route) {
+                NewPlaylistRoute(
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
             composable(LyraDestination.Favorites.route) {
                 FavoritesRoute(
                     onNavigateBack = { navController.popBackStack() },

@@ -162,4 +162,18 @@
 - Son Güncelleme Tarihi: 09.06.2026
 
 - Sebep: Backend REST API sözleşmesi tanımlı değil (`agents.md` §2.2 uydurmak yasak). Gerçek API
+- Sebep: Backend REST API sözleşmesi tanımlı değil (`agents.md` §2.2 uydurmak yasak). Gerçek API
   geldiğinde yalnızca implementasyon ve DI bağlaması değişir; ViewModel/Contract etkilenmez.
+
+
+### Kütüphane, Playlist Detay ve Yeni Çalma Listesi Ekranları
+
+- Karar: **MVI mimarisi, stub repository ve FavoritesRepository entegrasyonu**.
+
+- Son Güncelleme Tarihi: 17.06.2026
+
+- Kapsam: `data/library/` (Playlist, LibraryRepository, InMemoryLibraryRepository), `di/LibraryModule`, `ui/library/` (LibraryContract, LibraryViewModel, LibraryScreen), `ui/library/detail/` (PlaylistDetailContract, PlaylistDetailViewModel, PlaylistDetailScreen), `ui/library/create/` (NewPlaylistContract, NewPlaylistViewModel, NewPlaylistScreen), ve `ui/navigation/` (LyraDestination, LyraNavhost) güncellendi.
+
+- Favoriler Entegrasyonu: "Beğenilen Şarkılar" listesi `InMemoryLibraryRepository` içerisinde ayrı bir kopya olarak tutulmak yerine doğrudan `FavoritesRepository.favorites` gözlemlenerek dinamik olarak üretilir. Böylece, favori ekleme/çıkarma işlemleri tüm kütüphanede anında güncellenir.
+
+- Sebep: Ekranlar arasındaki veri tutarlılığını sağlamak ve MVI yapısını sürdürmek.

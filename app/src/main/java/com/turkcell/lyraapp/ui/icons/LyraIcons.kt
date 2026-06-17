@@ -292,6 +292,55 @@ object LyraIcons {
                     "-8,4v3h16v-3c0,-2.66 -5.33,-4 -8,-4z",
         )
     }
+
+    val Add: ImageVector by lazy {
+        lyraIcon(
+            name = "Add",
+            pathData = "M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+        )
+    }
+
+    val Close: ImageVector by lazy {
+        lyraIcon(
+            name = "Close",
+            pathData = "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12z",
+        )
+    }
+
+    val Grid: ImageVector by lazy {
+        lyraIcon(
+            name = "Grid",
+            pathData = "M4,11h5V5H4v6zm0,7h5v-6H4v6zm7,0h5v-6h-5v6zm0-13v6h5V5h-5z",
+        )
+    }
+
+    val List: ImageVector by lazy {
+        lyraIcon(
+            name = "List",
+            pathData = "M3,13h2v-2H3v2zm0,4h2v-2H3v2zm0-8h2V7H3v2zm4,4h14v-2H7v2zm0,4h14v-2H7v2zM7,7v2h14V7H7z",
+        )
+    }
+
+    val Pin: ImageVector by lazy {
+        lyraIcon(
+            name = "Pin",
+            pathData = "M16,12V4h1V2H7v2h1v8l-2,2v2h5.2v6h1.6v-6H18v-2l-2-2z",
+        )
+    }
+
+    val Globe: ImageVector by lazy {
+        lyraIcon(
+            name = "Globe",
+            pathData = "M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2zm-1,17.93c-3.95-.49-7-3.85-7-7.93c0-.62,0.08-1.21,0.21-1.79L9,15v1c0,1.1,0.9,2,2,2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55,0,1-.45,1-1V7h2c1.1,0,2-.9,2-2v-.41c2.93,1.19,5,4.06,5,7.41c0,2.08-.8,3.97-2.1,5.39z",
+        )
+    }
+
+    val Sort: ImageVector by lazy {
+        lyraIcon(
+            name = "Sort",
+            pathData = "M3,18h6v-2H3v2zM3,5v2h18V5H3zm0,7h12v-2H3v2z",
+        )
+    }
 }
 
 private fun lyraIcon(name: String, pathData: String): ImageVector =

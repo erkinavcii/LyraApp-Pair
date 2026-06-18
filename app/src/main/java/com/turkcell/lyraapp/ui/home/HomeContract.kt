@@ -15,6 +15,8 @@ data class HomeUiState(
     val recentlyPlayed: List<RecentlyPlayed> = emptyList(),
     val playlistsForYou: List<PlaylistForYou> = emptyList(),
     val currentTrack: NowPlayingTrack? = null,
+    val isCurrentTrackFavorited: Boolean = false,
+    val isPlaying: Boolean = false,
 )
 
 sealed interface HomeIntent {
@@ -24,6 +26,8 @@ sealed interface HomeIntent {
     data class PlayTrack(val track: NowPlayingTrack, val queue: List<NowPlayingTrack>) : HomeIntent
     data object OpenNowPlaying : HomeIntent
     data object SkipNext : HomeIntent
+    data object ToggleFavorite : HomeIntent
+    data object TogglePlayPause : HomeIntent
 }
 
 sealed interface HomeEffect {

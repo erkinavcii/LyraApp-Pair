@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.auth.AuthRepository
+import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.home.HomeRepository
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.data.player.PlayerRepository
@@ -31,6 +32,7 @@ class HomeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val themeRepository: ThemeRepository,
     private val playerRepository: PlayerRepository,
+    private val favoritesRepository: FavoritesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState(greeting = greetingForNow()))
@@ -43,6 +45,7 @@ class HomeViewModel @Inject constructor(
         loadFeed()
         observeTheme()
         observeCurrentTrack()
+        observeIsPlaying()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -55,6 +58,11 @@ class HomeViewModel @Inject constructor(
                 _effect.send(HomeEffect.NavigateToNowPlaying)
             }
             is HomeIntent.SkipNext -> playerRepository.skipNext()
+            is HomeIntent.TogglePlayPause -> playerRepository.togglePlayPause()
+            is HomeIntent.ToggleFavorite -> {
+                val track = _uiState.value.currentTrack ?: return
+                favoritesRepository.toggleFavorite(track)
+            }
         }
     }
 
@@ -103,10 +111,26 @@ class HomeViewModel @Inject constructor(
         themeRepository.toggleTheme()
     }
 
+    private fun observeIsPlaying() {
+        viewModelScope.launch {
+            playerRepository.isPlaying.collect { playing ->
+                _uiState.update { state -> state.copy(isPlaying = playing) }
+            }
+        }
+    }
+
     private fun observeCurrentTrack() {
         viewModelScope.launch {
             playerRepository.currentTrack.collect { track ->
-                _uiState.update { it.copy(currentTrack = track) }
+                val isFav = if (track != null) favoritesRepository.isFavorite(track.id) else false
+                _uiState.update { state -> state.copy(currentTrack = track, isCurrentTrackFavorited = isFav) }
+            }
+        }
+        viewModelScope.launch {
+            favoritesRepository.favorites.collect { favorites ->
+                val currentId = _uiState.value.currentTrack?.id
+                val isFav = currentId != null && favorites.any { fav -> fav.id == currentId }
+                _uiState.update { state -> state.copy(isCurrentTrackFavorited = isFav) }
             }
         }
     }

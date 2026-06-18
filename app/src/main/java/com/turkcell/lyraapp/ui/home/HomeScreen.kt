@@ -130,8 +130,12 @@ fun HomeScreen(
                         startColor = track.startColor,
                         endColor = track.endColor,
                         isDarkMode = state.isDarkMode,
+                        isPlaying = state.isPlaying,
+                        isFavorited = state.isFavorited,
                         onClick = { onIntent(HomeIntent.OpenNowPlaying) },
                         onSkipNext = { onIntent(HomeIntent.SkipNext) },
+                        onTogglePlayPause = { onIntent(HomeIntent.TogglePlayPause) },
+                        onToggleFavorite = { onIntent(HomeIntent.ToggleFavorite) },
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
@@ -442,8 +446,12 @@ private fun MiniPlayer(
     startColor: Long,
     endColor: Long,
     isDarkMode: Boolean,
+    isPlaying: Boolean,
+    isFavorited: Boolean,
     onClick: () -> Unit,
     onSkipNext: () -> Unit,
+    onTogglePlayPause: () -> Unit,
+    onToggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -493,20 +501,22 @@ private fun MiniPlayer(
                     maxLines = 1
                 )
             }
-            Icon(
-                imageVector = LyraIcons.Favorite,
-                contentDescription = null,
-                tint = Color(0xFFF48FB1),
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.width(16.dp))
-            Icon(
-                imageVector = LyraIcons.Pause,
-                contentDescription = null,
-                tint = if (isDarkMode) Color.White else Color.Black,
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(Modifier.width(16.dp))
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorited) LyraIcons.Favorite else LyraIcons.FavoriteOutlined,
+                    contentDescription = "Favori",
+                    tint = if (isFavorited) Color(0xFFF48FB1) else if (isDarkMode) Color.White else Color.Black,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            IconButton(onClick = onTogglePlayPause) {
+                Icon(
+                    imageVector = if (isPlaying) LyraIcons.Pause else LyraIcons.Play,
+                    contentDescription = if (isPlaying) "Duraklat" else "Oynat",
+                    tint = if (isDarkMode) Color.White else Color.Black,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
             IconButton(onClick = onSkipNext) {
                 Icon(
                     imageVector = LyraIcons.SkipNext,

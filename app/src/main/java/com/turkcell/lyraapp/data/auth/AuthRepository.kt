@@ -6,19 +6,24 @@ package com.turkcell.lyraapp.data.auth
 interface AuthRepository {
 
     /**
-     * Verilen telefon numarası ve şifreyle giriş dener.
+     * Telefon numarasına OTP kodu talep eder.
+     * @return Başarılı ise kullanıcının ilk kez mi kayıt olduğunu (firstTime) belirten Boolean değeri döner.
      */
-    suspend fun login(phoneNumber: String, password: String): Result<Unit>
+    suspend fun requestOtp(phone: String): Result<Boolean>
 
     /**
-     * Verilen kullanıcı bilgileriyle yeni bir hesap oluşturmayı dener.
-
+     * Gönderilen OTP kodunu doğrular.
+     * @return Başarılı ise kullanıcının profilinin tamamlanması gerekip gerekmediğini (firstTime) belirten Boolean değeri döner.
      */
-    suspend fun register(
+    suspend fun verifyOtp(phone: String, code: String): Result<Boolean>
+
+    /**
+     * Kullanıcının profil bilgilerini günceller.
+     */
+    suspend fun updateProfile(
         firstName: String,
         lastName: String,
-        phoneNumber: String,
-        password: String,
+        birthDate: String
     ): Result<Unit>
 
     /**

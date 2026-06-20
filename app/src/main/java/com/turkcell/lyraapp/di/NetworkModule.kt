@@ -1,5 +1,6 @@
 package com.turkcell.lyraapp.di
 
+import com.turkcell.lyraapp.data.network.AuthInterceptor
 import com.turkcell.lyraapp.data.network.LyraApiService
 import dagger.Module
 import dagger.Provides
@@ -28,8 +29,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        authInterceptor: AuthInterceptor
+    ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

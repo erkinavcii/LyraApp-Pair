@@ -58,11 +58,10 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val result = authRepository.register(
+            val result = authRepository.updateProfile(
                 firstName = state.firstName,
                 lastName = state.lastName,
-                phoneNumber = state.phoneNumber,
-                password = state.password,
+                birthDate = "2000-01-01"
             )
             _uiState.update { it.copy(isLoading = false) }
 

@@ -51,11 +51,13 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val result = authRepository.login(state.phoneNumber, state.password)
+            val result = authRepository.requestOtp(state.phoneNumber)
             _uiState.update { it.copy(isLoading = false) }
 
             result
-                .onSuccess { _effect.send(LoginEffect.NavigateToHome) }
+                .onSuccess { firstTime -> 
+                    _effect.send(LoginEffect.NavigateToHome) 
+                }
                 .onFailure { error ->
                     _effect.send(LoginEffect.ShowError(error.message ?: "Giriş başarısız."))
                 }
@@ -64,4 +66,4 @@ class LoginViewModel @Inject constructor(
 }
 
 private fun LoginUiState.isFormValid(): Boolean =
-    phoneNumber.length >= 10 && password.isNotBlank()
+    phoneNumber.length >= 10

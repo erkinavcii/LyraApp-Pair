@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.data.player.PlayerRepository
+import com.turkcell.lyraapp.data.theme.ThemeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class FavoritesViewModel @Inject constructor(
     private val favoritesRepository: FavoritesRepository,
     private val playerRepository: PlayerRepository,
+    private val themeRepository: ThemeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
@@ -45,6 +47,11 @@ class FavoritesViewModel @Inject constructor(
         viewModelScope.launch {
             playerRepository.currentTrack.collect { track ->
                 _uiState.update { it.copy(currentTrack = track) }
+            }
+        }
+        viewModelScope.launch {
+            themeRepository.isDarkMode.collect { isDark ->
+                _uiState.update { it.copy(isDarkMode = isDark) }
             }
         }
     }

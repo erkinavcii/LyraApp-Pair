@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -69,9 +68,19 @@ fun FavoritesScreen(
     onIntent: (FavoritesIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val dark = state.isDarkMode
+    val bgColor = if (dark) Color(0xFF121212) else Color(0xFFF8F8F8)
+    val onBgColor = if (dark) Color.White else Color.Black
+    val surfaceColor = if (dark) Color(0xFF2A2A2A) else Color(0xFFE0E0E0)
+    val playingRowColor = if (dark) Color(0xFF2A1F23) else Color(0xFFFBEAEE)
+    val playingTitleColor = if (dark) Color(0xFFFFB1C8) else Color(0xFF8F4A5F)
+    val accentColor = if (dark) Color(0xFFFFB1C8) else Color(0xFF8F4A5F)
+    val accentOnColor = if (dark) Color(0xFF5E1133) else Color.White
+    val disabledBgColor = if (dark) Color(0xFF3A2A30) else Color(0xFFD0C0C4)
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = Color(0xFF121212),
+        containerColor = bgColor,
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -79,17 +88,26 @@ fun FavoritesScreen(
                 .fillMaxSize(),
         ) {
             item {
-                FavoritesHeader(onNavigateBack = { onIntent(FavoritesIntent.NavigateBack) })
+                FavoritesHeader(
+                    onBgColor = onBgColor,
+                    onNavigateBack = { onIntent(FavoritesIntent.NavigateBack) },
+                )
             }
             item {
                 FavoritesCoverSection(
                     trackCountText = state.trackCountText,
                     totalDurationText = state.totalDurationText,
+                    onBgColor = onBgColor,
                 )
             }
             item {
                 FavoritesActions(
                     hasItems = state.tracks.isNotEmpty(),
+                    accentColor = accentColor,
+                    accentOnColor = accentOnColor,
+                    surfaceColor = surfaceColor,
+                    onSurfaceColor = onBgColor,
+                    disabledBgColor = disabledBgColor,
                     onPlayAll = { onIntent(FavoritesIntent.PlayAll) },
                     onShuffle = { onIntent(FavoritesIntent.ShufflePlay) },
                     onDownload = { onIntent(FavoritesIntent.Download) },
@@ -104,6 +122,9 @@ fun FavoritesScreen(
                     FavoriteTrackRow(
                         track = track,
                         isPlaying = state.currentTrack?.id == track.id,
+                        onBgColor = onBgColor,
+                        playingRowColor = playingRowColor,
+                        playingTitleColor = playingTitleColor,
                         onClick = { onIntent(FavoritesIntent.PlayTrack(track)) },
                         onToggleFavorite = { onIntent(FavoritesIntent.ToggleFavorite(track)) },
                     )
@@ -115,7 +136,10 @@ fun FavoritesScreen(
 }
 
 @Composable
-private fun FavoritesHeader(onNavigateBack: () -> Unit) {
+private fun FavoritesHeader(
+    onBgColor: Color,
+    onNavigateBack: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -126,7 +150,7 @@ private fun FavoritesHeader(onNavigateBack: () -> Unit) {
             Icon(
                 imageVector = LyraIcons.ArrowBack,
                 contentDescription = "Geri",
-                tint = Color.White,
+                tint = onBgColor,
             )
         }
     }
@@ -136,6 +160,7 @@ private fun FavoritesHeader(onNavigateBack: () -> Unit) {
 private fun FavoritesCoverSection(
     trackCountText: String,
     totalDurationText: String,
+    onBgColor: Color,
 ) {
     Row(
         modifier = Modifier
@@ -167,7 +192,7 @@ private fun FavoritesCoverSection(
                 text = "Begenilen Sarkılar",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = onBgColor,
             )
             if (trackCountText.isNotEmpty()) {
                 Text(
@@ -183,6 +208,11 @@ private fun FavoritesCoverSection(
 @Composable
 private fun FavoritesActions(
     hasItems: Boolean,
+    accentColor: Color,
+    accentOnColor: Color,
+    surfaceColor: Color,
+    onSurfaceColor: Color,
+    disabledBgColor: Color,
     onPlayAll: () -> Unit,
     onShuffle: () -> Unit,
     onDownload: () -> Unit,
@@ -199,7 +229,7 @@ private fun FavoritesActions(
                 .weight(1f)
                 .height(48.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(if (hasItems) Color(0xFFFFB1C8) else Color(0xFF3A2A30))
+                .background(if (hasItems) accentColor else disabledBgColor)
                 .clickable(enabled = hasItems, onClick = onPlayAll),
             contentAlignment = Alignment.Center,
         ) {
@@ -210,12 +240,12 @@ private fun FavoritesActions(
                 Icon(
                     imageVector = LyraIcons.Play,
                     contentDescription = null,
-                    tint = if (hasItems) Color(0xFF5E1133) else Color.Gray,
+                    tint = if (hasItems) accentOnColor else Color.Gray,
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
                     text = "Cal",
-                    color = if (hasItems) Color(0xFF5E1133) else Color.Gray,
+                    color = if (hasItems) accentOnColor else Color.Gray,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                 )
@@ -225,14 +255,14 @@ private fun FavoritesActions(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2A2A2A))
+                .background(surfaceColor)
                 .clickable(enabled = hasItems, onClick = onShuffle),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = LyraIcons.Shuffle,
                 contentDescription = "Karistir",
-                tint = if (hasItems) Color.White else Color.Gray,
+                tint = if (hasItems) onSurfaceColor else Color.Gray,
                 modifier = Modifier.size(22.dp),
             )
         }
@@ -240,14 +270,14 @@ private fun FavoritesActions(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2A2A2A))
+                .background(surfaceColor)
                 .clickable(onClick = onDownload),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = LyraIcons.Download,
                 contentDescription = "Indir",
-                tint = Color.White,
+                tint = onSurfaceColor,
                 modifier = Modifier.size(22.dp),
             )
         }
@@ -258,13 +288,16 @@ private fun FavoritesActions(
 private fun FavoriteTrackRow(
     track: NowPlayingTrack,
     isPlaying: Boolean,
+    onBgColor: Color,
+    playingRowColor: Color,
+    playingTitleColor: Color,
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isPlaying) Color(0xFF2A1F23) else Color.Transparent)
+            .background(if (isPlaying) playingRowColor else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -283,7 +316,7 @@ private fun FavoriteTrackRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
-                color = if (isPlaying) Color(0xFFFFB1C8) else Color.White,
+                color = if (isPlaying) playingTitleColor else onBgColor,
                 fontWeight = if (isPlaying) FontWeight.SemiBold else FontWeight.Normal,
                 fontSize = 14.sp,
                 maxLines = 1,
@@ -344,7 +377,7 @@ private fun EmptyFavoritesHint() {
             )
             Text(
                 text = "Sarkilardaki kalp ikonuna tiklayin",
-                color = Color(0xFF555555),
+                color = Color.Gray.copy(alpha = 0.6f),
                 style = MaterialTheme.typography.bodySmall,
             )
         }

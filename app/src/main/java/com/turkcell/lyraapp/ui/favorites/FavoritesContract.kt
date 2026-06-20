@@ -4,6 +4,7 @@ import com.turkcell.lyraapp.data.player.NowPlayingTrack
 
 data class FavoritesUiState(
     val isLoading: Boolean = false,
+    val isDarkMode: Boolean = true,
     val tracks: List<NowPlayingTrack> = emptyList(),
     val trackCountText: String = "",
     val totalDurationText: String = "",

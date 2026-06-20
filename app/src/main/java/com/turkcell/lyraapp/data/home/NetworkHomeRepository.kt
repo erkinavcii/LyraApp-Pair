@@ -1,5 +1,6 @@
 package com.turkcell.lyraapp.data.home
 
+import com.turkcell.lyraapp.data.auth.AuthRepository
 import com.turkcell.lyraapp.data.network.LyraApiService
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import kotlinx.coroutines.Dispatchers
@@ -7,7 +8,8 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class NetworkHomeRepository @Inject constructor(
-    private val apiService: LyraApiService
+    private val apiService: LyraApiService,
+    private val authRepository: AuthRepository,
 ) : HomeRepository {
 
     override suspend fun getHomeFeed(): Result<HomeFeed> = withContext(Dispatchers.IO) {
@@ -49,9 +51,20 @@ class NetworkHomeRepository @Inject constructor(
                 )
             }
 
+            val userName = authRepository.getLoggedInUserName()
+            val initials = if (!userName.isNullOrBlank()) {
+                userName.split(" ")
+                    .filter { it.isNotBlank() }
+                    .take(2)
+                    .map { it.first().uppercase() }
+                    .joinToString("")
+            } else {
+                "ZK"
+            }
+
             Result.success(
                 HomeFeed(
-                    userInitials = "ZK",
+                    userInitials = initials,
                     quickPicks = quickPicks,
                     recentlyPlayed = recentlyPlayed,
                     playlistsForYou = playlistsForYou,
@@ -62,3 +75,4 @@ class NetworkHomeRepository @Inject constructor(
         }
     }
 }
+

@@ -63,6 +63,9 @@ class HomeViewModel @Inject constructor(
                 val track = _uiState.value.currentTrack ?: return
                 favoritesRepository.toggleFavorite(track)
             }
+            is HomeIntent.PlaylistClicked -> viewModelScope.launch {
+                _effect.send(HomeEffect.NavigateToPlaylistDetail(intent.playlistId))
+            }
         }
     }
 

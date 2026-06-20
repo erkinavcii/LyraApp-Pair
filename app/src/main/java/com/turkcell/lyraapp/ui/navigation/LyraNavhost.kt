@@ -92,6 +92,11 @@ fun LyraNavHost(
                             launchSingleTop = true
                         }
                     },
+                    onNavigateToPlaylistDetail = { playlistId ->
+                        navController.navigate("playlist_detail/$playlistId") {
+                            launchSingleTop = true
+                        }
+                    },
                     onToggleTheme = onThemeToggle,
                 )
             }

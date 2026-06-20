@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,18 +38,21 @@ import com.turkcell.lyraapp.ui.icons.LyraIcons
 fun HomeRoute(
     onNavigateToLogin: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
+    onNavigateToPlaylistDetail: (String) -> Unit,
     onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 HomeEffect.NavigateToLogin -> onNavigateToLogin()
                 HomeEffect.NavigateToNowPlaying -> onNavigateToNowPlaying()
-                is HomeEffect.ShowError -> {}
+                is HomeEffect.NavigateToPlaylistDetail -> onNavigateToPlaylistDetail(effect.playlistId)
+                is HomeEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
             }
         }
     }
@@ -56,6 +60,7 @@ fun HomeRoute(
     HomeScreen(
         state = uiState,
         onIntent = viewModel::onIntent,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -65,10 +70,12 @@ fun HomeScreen(
     state: HomeUiState,
     onIntent: (HomeIntent) -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = if (state.isDarkMode) Color(0xFF121212) else Color(0xFFF8F8F8)
+        containerColor = if (state.isDarkMode) Color(0xFF121212) else Color(0xFFF8F8F8),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
 
@@ -96,9 +103,6 @@ fun HomeScreen(
                     val recentlyPlayedTracks = state.recentlyPlayed.map { rp ->
                         NowPlayingTrack(id = rp.id, title = rp.title, subtitle = rp.subtitle, startColor = rp.artworkStartColor, endColor = rp.artworkEndColor)
                     }
-                    val playlistTracks = state.playlistsForYou.map { pl ->
-                        NowPlayingTrack(id = pl.id, title = pl.title, subtitle = "", startColor = pl.artworkStartColor, endColor = pl.artworkEndColor)
-                    }
 
                     QuickPicksGrid(
                         items = state.quickPicks,
@@ -117,7 +121,7 @@ fun HomeScreen(
                     PlaylistsList(
                         items = state.playlistsForYou,
                         isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, playlistTracks)) },
+                        onPlaylistClick = { playlistId -> onIntent(HomeIntent.PlaylistClicked(playlistId)) },
                     )
 
                     Spacer(Modifier.height(100.dp))
@@ -340,7 +344,7 @@ private fun RecentlyPlayedList(
 private fun PlaylistsList(
     items: List<PlaylistForYou>,
     isDarkMode: Boolean,
-    onTrackClick: (NowPlayingTrack) -> Unit,
+    onPlaylistClick: (String) -> Unit,
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         items(items) { item ->
@@ -348,15 +352,7 @@ private fun PlaylistsList(
                 modifier = Modifier
                     .width(160.dp)
                     .clickable {
-                        onTrackClick(
-                            NowPlayingTrack(
-                                id = item.id,
-                                title = item.title,
-                                subtitle = "",
-                                startColor = item.artworkStartColor,
-                                endColor = item.artworkEndColor,
-                            )
-                        )
+                        onPlaylistClick(item.id)
                     },
             ) {
                 Box(

@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -240,10 +241,11 @@ private fun OtpInputField(
 }
 
 private fun Modifier.noRippleClickable(onClick: () -> Unit): Modifier =
-    this.then(
-        Modifier.clickable(
+    composed {
+        val interactionSource = remember { MutableInteractionSource() }
+        clickable(
             indication = null,
-            interactionSource = MutableInteractionSource(),
+            interactionSource = interactionSource,
             onClick = onClick,
         )
-    )
+    }

@@ -45,7 +45,7 @@ class LoginViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val result = authRepository.requestOtp(state.phoneNumber)
+            val result = authRepository.requestOtp("+90${state.phoneNumber}")
             _uiState.update { it.copy(isLoading = false) }
             result
                 .onSuccess { _effect.send(LoginEffect.NavigateToOtp(state.phoneNumber)) }

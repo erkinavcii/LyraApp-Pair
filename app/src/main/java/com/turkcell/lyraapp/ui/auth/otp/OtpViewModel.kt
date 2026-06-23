@@ -51,7 +51,7 @@ class OtpViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val result = authRepository.verifyOtp(state.phoneNumber, state.code)
+            val result = authRepository.verifyOtp("+90${state.phoneNumber}", state.code)
             _uiState.update { it.copy(isLoading = false) }
             result
                 .onSuccess { firstTime ->
@@ -68,7 +68,7 @@ class OtpViewModel @Inject constructor(
     private fun resend() {
         if (_uiState.value.resendCooldownSeconds > 0) return
         viewModelScope.launch {
-            val result = authRepository.requestOtp(_uiState.value.phoneNumber)
+            val result = authRepository.requestOtp("+90${_uiState.value.phoneNumber}")
             result
                 .onSuccess { startResendCountdown() }
                 .onFailure { _effect.send(OtpEffect.ShowError(it.message ?: "Kod gönderilemedi.")) }

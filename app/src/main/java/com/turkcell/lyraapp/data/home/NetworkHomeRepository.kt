@@ -2,6 +2,7 @@ package com.turkcell.lyraapp.data.home
 
 import com.turkcell.lyraapp.data.auth.AuthRepository
 import com.turkcell.lyraapp.data.network.LyraApiService
+import com.turkcell.lyraapp.data.network.RecordPlayRequest
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,13 +15,11 @@ class NetworkHomeRepository @Inject constructor(
 
     override suspend fun getHomeFeed(): Result<HomeFeed> = withContext(Dispatchers.IO) {
         try {
-            val songsResponse = apiService.getSongs(limit = 20)
+            val forYouResponse = apiService.getForYou(limit = 6)
+            val recentlyPlayedResponse = apiService.getRecentlyPlayed(limit = 20)
             val playlistsResponse = apiService.getPlaylists()
 
-            val songs = songsResponse.data
-            val playlists = playlistsResponse.data
-
-            val quickPicks = songs.take(6).map { song ->
+            val quickPicks = forYouResponse.data.map { song ->
                 val colors = NowPlayingTrack.getColorsForId(song.id)
                 QuickPick(
                     id = song.id,
@@ -30,7 +29,7 @@ class NetworkHomeRepository @Inject constructor(
                 )
             }
 
-            val recentlyPlayed = songs.drop(6).take(6).map { song ->
+            val recentlyPlayed = recentlyPlayedResponse.data.map { song ->
                 val colors = NowPlayingTrack.getColorsForId(song.id)
                 RecentlyPlayed(
                     id = song.id,
@@ -41,7 +40,7 @@ class NetworkHomeRepository @Inject constructor(
                 )
             }
 
-            val playlistsForYou = playlists.map { playlist ->
+            val playlistsForYou = playlistsResponse.data.map { playlist ->
                 val colors = NowPlayingTrack.getColorsForId(playlist.id)
                 PlaylistForYou(
                     id = playlist.id,
@@ -59,7 +58,7 @@ class NetworkHomeRepository @Inject constructor(
                     .map { it.first().uppercase() }
                     .joinToString("")
             } else {
-                "ZK"
+                "?"
             }
 
             Result.success(
@@ -74,5 +73,13 @@ class NetworkHomeRepository @Inject constructor(
             Result.failure(e)
         }
     }
-}
 
+    override suspend fun recordPlay(songId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            apiService.recordPlay(RecordPlayRequest(songId))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}

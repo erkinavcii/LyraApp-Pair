@@ -121,3 +121,7 @@ data class UpdateInfoRequest(
 data class UpdateInfoResponse(
     @SerializedName("data") val data: LyraUser,
 )
+
+data class RecordPlayRequest(
+    @SerializedName("songId") val songId: String,
+)

@@ -3,6 +3,7 @@ package com.turkcell.lyraapp.ui.nowplaying
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
+import com.turkcell.lyraapp.data.home.HomeRepository
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class NowPlayingViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val favoritesRepository: FavoritesRepository,
+    private val homeRepository: HomeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NowPlayingUiState())
@@ -27,9 +29,15 @@ class NowPlayingViewModel @Inject constructor(
     private val _effect = Channel<NowPlayingEffect>(Channel.BUFFERED)
     val effect: Flow<NowPlayingEffect> = _effect.receiveAsFlow()
 
+    private var lastRecordedTrackId: String? = null
+
     init {
         viewModelScope.launch {
             playerRepository.currentTrack.collect { track ->
+                if (track != null && track.id != lastRecordedTrackId) {
+                    lastRecordedTrackId = track.id
+                    recordPlay(track.id)
+                }
                 _uiState.update { state ->
                     state.copy(
                         track = track,
@@ -85,6 +93,10 @@ class NowPlayingViewModel @Inject constructor(
             }
             is NowPlayingIntent.Dismiss -> viewModelScope.launch { _effect.send(NowPlayingEffect.NavigateBack) }
         }
+    }
+
+    private fun recordPlay(songId: String) {
+        viewModelScope.launch { homeRepository.recordPlay(songId) }
     }
 
     private fun seekTo(progress: Float) {

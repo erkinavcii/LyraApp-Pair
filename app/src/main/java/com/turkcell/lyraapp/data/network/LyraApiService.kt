@@ -1,8 +1,9 @@
 package com.turkcell.lyraapp.data.network
 
+import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
-import retrofit2.http.Body
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -52,4 +53,19 @@ interface LyraApiService {
     suspend fun updateInformations(
         @Body request: UpdateInfoRequest
     ): UpdateInfoResponse
+
+    @GET("api/v1/me/recently-played")
+    suspend fun getRecentlyPlayed(
+        @Query("limit") limit: Int = 20
+    ): SongsResponse
+
+    @GET("api/v1/me/for-you")
+    suspend fun getForYou(
+        @Query("limit") limit: Int = 20
+    ): SongsResponse
+
+    @POST("api/v1/me/plays")
+    suspend fun recordPlay(
+        @Body request: RecordPlayRequest
+    ): retrofit2.Response<Unit>
 }

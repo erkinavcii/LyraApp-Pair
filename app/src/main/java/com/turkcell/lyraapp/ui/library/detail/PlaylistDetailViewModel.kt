@@ -72,6 +72,7 @@ class PlaylistDetailViewModel @Inject constructor(
             PlaylistDetailIntent.TogglePlayPause -> playerRepository.togglePlayPause()
             is PlaylistDetailIntent.PlayTrack -> playTrack(intent.track)
             is PlaylistDetailIntent.ToggleFavorite -> favoritesRepository.toggleFavorite(intent.track)
+            is PlaylistDetailIntent.RemoveTrack -> removeTrack(intent.trackId)
             PlaylistDetailIntent.DownloadClick -> downloadPlaylist()
             PlaylistDetailIntent.NavigateBack -> {
                 viewModelScope.launch {
@@ -128,6 +129,25 @@ class PlaylistDetailViewModel @Inject constructor(
             _uiState.update { it.copy(isDownloading = true) }
             kotlinx.coroutines.delay(1500L) // İndirme simülasyonu
             _uiState.update { it.copy(isDownloading = false) }
+        }
+    }
+
+    private fun removeTrack(trackId: String) {
+        val playlistId = _uiState.value.playlist?.id ?: return
+        viewModelScope.launch {
+            libraryRepository.removeTrackFromPlaylist(playlistId, trackId)
+                .onSuccess {
+                    _uiState.update { state ->
+                        state.copy(
+                            playlist = state.playlist?.copy(
+                                tracks = state.playlist.tracks.filter { it.id != trackId }
+                            )
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Şarkı çalma listesinden silinemedi."))
+                }
         }
     }
 }

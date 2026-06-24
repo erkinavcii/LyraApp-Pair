@@ -19,6 +19,7 @@ sealed interface PlaylistDetailIntent {
     data object TogglePlayPause : PlaylistDetailIntent
     data class PlayTrack(val track: NowPlayingTrack) : PlaylistDetailIntent
     data class ToggleFavorite(val track: NowPlayingTrack) : PlaylistDetailIntent
+    data class RemoveTrack(val trackId: String) : PlaylistDetailIntent
     data object DownloadClick : PlaylistDetailIntent
     data object NavigateBack : PlaylistDetailIntent
 }

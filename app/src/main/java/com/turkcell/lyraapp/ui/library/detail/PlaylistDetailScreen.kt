@@ -18,14 +18,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +72,7 @@ fun PlaylistDetailRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailScreen(
     state: PlaylistDetailUiState,
@@ -129,12 +137,46 @@ fun PlaylistDetailScreen(
                     val isTrackPlaying = state.currentTrack?.id == track.id
                     val isFavorited = state.favoritedTrackIds.contains(track.id)
 
-                    TrackRowItem(
-                        track = track,
-                        isPlaying = isTrackPlaying,
-                        isFavorited = isFavorited,
-                        onClick = { onIntent(PlaylistDetailIntent.PlayTrack(track)) },
-                        onToggleFavorite = { onIntent(PlaylistDetailIntent.ToggleFavorite(track)) }
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { dismissValue ->
+                            if (dismissValue == SwipeToDismissBoxValue.StartToEnd) {
+                                onIntent(PlaylistDetailIntent.RemoveTrack(track.id))
+                                true
+                            } else {
+                                false
+                            }
+                        }
+                    )
+
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = true,
+                        enableDismissFromEndToStart = false,
+                        backgroundContent = {
+                            val color = Color.Red.copy(alpha = 0.8f)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(color)
+                                    .padding(horizontal = 24.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Icon(
+                                    imageVector = LyraIcons.Delete,
+                                    contentDescription = "Sil",
+                                    tint = Color.White
+                                )
+                            }
+                        },
+                        content = {
+                            TrackRowItem(
+                                track = track,
+                                isPlaying = isTrackPlaying,
+                                isFavorited = isFavorited,
+                                onClick = { onIntent(PlaylistDetailIntent.PlayTrack(track)) },
+                                onToggleFavorite = { onIntent(PlaylistDetailIntent.ToggleFavorite(track)) }
+                            )
+                        }
                     )
                 }
 
@@ -318,7 +360,7 @@ private fun TrackRowItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(if (isPlaying) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else Color.Transparent)
+            .background(if (isPlaying) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else MaterialTheme.colorScheme.background)
             .clickable(onClick = onClick)
             .padding(horizontal = 24.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

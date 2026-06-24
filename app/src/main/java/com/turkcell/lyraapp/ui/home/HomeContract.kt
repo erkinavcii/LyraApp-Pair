@@ -3,6 +3,7 @@ package com.turkcell.lyraapp.ui.home
 import com.turkcell.lyraapp.data.home.PlaylistForYou
 import com.turkcell.lyraapp.data.home.QuickPick
 import com.turkcell.lyraapp.data.home.RecentlyPlayed
+import com.turkcell.lyraapp.data.home.Recommendation
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 
 
@@ -14,6 +15,7 @@ data class HomeUiState(
     val quickPicks: List<QuickPick> = emptyList(),
     val recentlyPlayed: List<RecentlyPlayed> = emptyList(),
     val playlistsForYou: List<PlaylistForYou> = emptyList(),
+    val recommendations: List<Recommendation> = emptyList(),
     val currentTrack: NowPlayingTrack? = null,
     val isCurrentTrackFavorited: Boolean = false,
     val isPlaying: Boolean = false,

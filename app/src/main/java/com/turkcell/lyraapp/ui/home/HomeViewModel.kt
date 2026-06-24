@@ -86,6 +86,7 @@ class HomeViewModel @Inject constructor(
                             quickPicks = feed.quickPicks,
                             recentlyPlayed = feed.recentlyPlayed,
                             playlistsForYou = feed.playlistsForYou,
+                            recommendations = feed.recommendations,
                         )
                     }
                 }

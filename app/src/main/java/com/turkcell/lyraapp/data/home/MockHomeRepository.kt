@@ -13,6 +13,9 @@ class MockHomeRepository @Inject constructor() : HomeRepository {
                 quickPicks = QUICK_PICKS,
                 recentlyPlayed = RECENTLY_PLAYED,
                 playlistsForYou = PLAYLISTS_FOR_YOU,
+                recommendations = RECENTLY_PLAYED.map {
+                    Recommendation(it.id, it.title, it.subtitle, it.artworkStartColor, it.artworkEndColor)
+                }
             ),
         )
     }

@@ -34,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.turkcell.lyraapp.data.home.PlaylistForYou
 import com.turkcell.lyraapp.data.home.QuickPick
 import com.turkcell.lyraapp.data.home.RecentlyPlayed
+import com.turkcell.lyraapp.data.home.Recommendation
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.ui.icons.LyraIcons
 
@@ -114,6 +115,10 @@ fun HomeScreen(
                         NowPlayingTrack(id = rp.id, title = rp.title, subtitle = rp.subtitle, startColor = rp.artworkStartColor, endColor = rp.artworkEndColor)
                     }
 
+                    val recommendationsTracks = state.recommendations.map { rec ->
+                        NowPlayingTrack(id = rec.id, title = rec.title, subtitle = rec.subtitle, startColor = rec.artworkStartColor, endColor = rec.artworkEndColor)
+                    }
+
                     QuickPicksGrid(
                         items = state.quickPicks,
                         isDarkMode = state.isDarkMode,
@@ -125,6 +130,13 @@ fun HomeScreen(
                         items = state.recentlyPlayed,
                         isDarkMode = state.isDarkMode,
                         onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
+                    )
+
+                    SectionHeader(title = "Önerilenler", isDarkMode = state.isDarkMode)
+                    RecommendationsList(
+                        items = state.recommendations,
+                        isDarkMode = state.isDarkMode,
+                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recommendationsTracks)) },
                     )
 
                     SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
@@ -298,6 +310,61 @@ private fun SectionHeader(title: String, isDarkMode: Boolean) {
 @Composable
 private fun RecentlyPlayedList(
     items: List<RecentlyPlayed>,
+    isDarkMode: Boolean,
+    onTrackClick: (NowPlayingTrack) -> Unit,
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        items(items) { item ->
+            Column(
+                modifier = Modifier
+                    .width(160.dp)
+                    .clickable {
+                        onTrackClick(
+                            NowPlayingTrack(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = item.subtitle,
+                                startColor = item.artworkStartColor,
+                                endColor = item.artworkEndColor,
+                            )
+                        )
+                    },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(160.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DynamicMusicCardBackground(
+                        title = item.title,
+                        startColor = Color(item.artworkStartColor),
+                        endColor = Color(item.artworkEndColor),
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = item.title,
+                    color = if (isDarkMode) Color.White else Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 1
+                )
+                Text(
+                    text = item.subtitle,
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecommendationsList(
+    items: List<Recommendation>,
     isDarkMode: Boolean,
     onTrackClick: (NowPlayingTrack) -> Unit,
 ) {

@@ -5,6 +5,7 @@ data class HomeFeed(
     val quickPicks: List<QuickPick>,
     val recentlyPlayed: List<RecentlyPlayed>,
     val playlistsForYou: List<PlaylistForYou>,
+    val recommendations: List<Recommendation>,
 )
 
 data class QuickPick(
@@ -25,6 +26,14 @@ data class RecentlyPlayed(
 data class PlaylistForYou(
     val id: String,
     val title: String,
+    val artworkStartColor: Long,
+    val artworkEndColor: Long,
+)
+
+data class Recommendation(
+    val id: String,
+    val title: String,
+    val subtitle: String,
     val artworkStartColor: Long,
     val artworkEndColor: Long,
 )

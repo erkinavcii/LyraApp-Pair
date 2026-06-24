@@ -18,6 +18,7 @@ class NetworkHomeRepository @Inject constructor(
             val forYouResponse = apiService.getForYou(limit = 6)
             val recentlyPlayedResponse = apiService.getRecentlyPlayed(limit = 20)
             val playlistsResponse = apiService.getPlaylists()
+            val recommendationsResponse = apiService.getRecommendations(limit = 20)
 
             val quickPicks = forYouResponse.data.map { song ->
                 val colors = NowPlayingTrack.getColorsForId(song.id)
@@ -50,6 +51,17 @@ class NetworkHomeRepository @Inject constructor(
                 )
             }
 
+            val recommendations = recommendationsResponse.data.map { song ->
+                val colors = NowPlayingTrack.getColorsForId(song.id)
+                Recommendation(
+                    id = song.id,
+                    title = song.title,
+                    subtitle = song.artist,
+                    artworkStartColor = colors.first,
+                    artworkEndColor = colors.second,
+                )
+            }
+
             val userName = authRepository.getLoggedInUserName()
             val initials = if (!userName.isNullOrBlank()) {
                 userName.split(" ")
@@ -67,6 +79,7 @@ class NetworkHomeRepository @Inject constructor(
                     quickPicks = quickPicks,
                     recentlyPlayed = recentlyPlayed,
                     playlistsForYou = playlistsForYou,
+                    recommendations = recommendations,
                 )
             )
         } catch (e: Exception) {

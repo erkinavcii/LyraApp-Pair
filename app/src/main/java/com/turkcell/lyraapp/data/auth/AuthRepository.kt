@@ -39,6 +39,11 @@ interface AuthRepository {
     fun getLoggedInUserName(): String?
 
     /**
+     * Sunucudan güncel kullanıcı profil bilgilerini çekerek yerel depolamayı günceller.
+     */
+    suspend fun fetchUserProfile(): Result<Unit>
+
+    /**
      * Kullanıcının halihazırda giriş yapıp yapmadığını kontrol eder.
      */
     fun isUserLoggedIn(): Boolean

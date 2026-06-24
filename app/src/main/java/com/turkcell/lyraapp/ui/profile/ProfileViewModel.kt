@@ -40,6 +40,18 @@ class ProfileViewModel @Inject constructor(
                 _uiState.update { it.copy(isDarkMode = isDark) }
             }
         }
+        viewModelScope.launch {
+            authRepository.fetchUserProfile()
+                .onSuccess {
+                    val updatedName = authRepository.getLoggedInUserName().orEmpty()
+                    _uiState.update {
+                        it.copy(
+                            displayName = updatedName,
+                            initials = computeInitials(updatedName),
+                        )
+                    }
+                }
+        }
     }
 
     fun onIntent(intent: ProfileIntent) {

@@ -88,6 +88,19 @@ class NetworkAuthRepository @Inject constructor(
         return tokenStorage.getUserName()
     }
 
+    override suspend fun fetchUserProfile(): Result<Unit> {
+        return try {
+            val response = apiService.getCurrentUser()
+            val user = response.data
+            val displayName = user.displayName ?: "${user.firstName ?: ""} ${user.lastName ?: ""}".trim()
+            tokenStorage.saveUserName(displayName)
+            tokenStorage.saveUserPhone(user.phone)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override fun isUserLoggedIn(): Boolean {
         return tokenStorage.isLoggedIn()
     }

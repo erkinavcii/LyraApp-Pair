@@ -1,11 +1,12 @@
 package com.turkcell.lyraapp.data.library
 
 import android.content.Context
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.turkcell.lyraapp.data.network.LyraApiService
 import com.turkcell.lyraapp.data.network.PlaylistDto
+import com.turkcell.lyraapp.data.network.PlaylistDetailDto
 import com.turkcell.lyraapp.data.network.SongDto
+import com.turkcell.lyraapp.data.network.CreatePlaylistRequest
+import com.turkcell.lyraapp.data.network.AddTrackRequest
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -30,37 +31,29 @@ class NetworkLibraryRepository @Inject constructor(
     override val playlists: StateFlow<List<Playlist>> = _playlists.asStateFlow()
 
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val sharedPrefs = context.getSharedPreferences("lyra_library", Context.MODE_PRIVATE)
-    private val gson = Gson()
 
     init {
         fetchPlaylists()
     }
 
-    private fun getStoredPlaylists(): List<Playlist> {
-        val json = sharedPrefs.getString("custom_playlists", null) ?: return emptyList()
-        return try {
-            val type = object : TypeToken<List<Playlist>>() {}.type
-            gson.fromJson(json, type)
-        } catch (e: Exception) {
-            android.util.Log.e("NetworkLibraryRepository", "getStoredPlaylists error", e)
-            emptyList()
-        }
-    }
-
-    private fun savePlaylistsLocally(list: List<Playlist>) {
-        val customOnly = list.filter { it.id.startsWith("pl-") }
-        val json = gson.toJson(customOnly)
-        sharedPrefs.edit().putString("custom_playlists", json).apply()
-    }
-
     private fun fetchPlaylists() {
         repositoryScope.launch {
-            val localCustom = getStoredPlaylists()
-            _playlists.value = localCustom
             try {
-                val response = apiService.getPlaylists()
-                val mapped = response.data.map { playlistDto ->
+                val publicPlaylists = try {
+                    apiService.getPlaylists().data
+                } catch (e: Exception) {
+                    emptyList()
+                }
+
+                val userPlaylists = try {
+                    apiService.getUserPlaylists().data
+                } catch (e: Exception) {
+                    emptyList()
+                }
+
+                val allPlaylistsDto = (publicPlaylists + userPlaylists).distinctBy { it.id }
+
+                val mapped = allPlaylistsDto.map { playlistDto ->
                     val detail = try {
                         apiService.getPlaylistDetail(playlistDto.id).data
                     } catch (e: Exception) {
@@ -69,33 +62,19 @@ class NetworkLibraryRepository @Inject constructor(
                     val tracks = detail?.songs?.map { it.toDomain() } ?: emptyList()
                     playlistDto.toDomain(tracks)
                 }
-                _playlists.value = localCustom + mapped
+
+                _playlists.value = mapped
             } catch (e: Exception) {
-                // Fallback / log
+                android.util.Log.e("NetworkLibraryRepository", "fetchPlaylists error", e)
             }
         }
     }
 
     override suspend fun getPlaylistById(id: String): Result<Playlist> = withContext(Dispatchers.IO) {
         try {
-            val local = _playlists.value.find { it.id == id }
-            if (local != null && local.tracks.isNotEmpty()) {
-                return@withContext Result.success(local)
-            }
-
             val response = apiService.getPlaylistDetail(id)
             val detail = response.data
-            val tracks = detail.songs.map { it.toDomain() }
-            val colors = NowPlayingTrack.getColorsForId(detail.id)
-            val playlist = Playlist(
-                id = detail.id,
-                name = detail.name,
-                description = detail.description ?: "",
-                isPublic = true,
-                artworkStartColor = colors.first,
-                artworkEndColor = colors.second,
-                tracks = tracks
-            )
+            val playlist = detail.toDomain()
             _playlists.update { current ->
                 val exists = current.any { it.id == id }
                 if (exists) {
@@ -115,51 +94,66 @@ class NetworkLibraryRepository @Inject constructor(
         description: String,
         isPublic: Boolean,
         tracks: List<NowPlayingTrack>
-    ): Result<Playlist> = withContext(Dispatchers.Default) {
+    ): Result<Playlist> = withContext(Dispatchers.IO) {
         if (name.isBlank()) {
             return@withContext Result.failure(IllegalArgumentException("Çalma listesi adı boş olamaz."))
         }
-        val id = "pl-${System.currentTimeMillis()}"
-        val colors = NowPlayingTrack.getColorsForId(id)
-        val newPlaylist = Playlist(
-            id = id,
-            name = name.trim(),
-            description = description.trim(),
-            isPublic = isPublic,
-            artworkStartColor = colors.first,
-            artworkEndColor = colors.second,
-            tracks = tracks,
-            isPinned = false
-        )
-        _playlists.update { current ->
-            val updated = listOf(newPlaylist) + current
-            savePlaylistsLocally(updated)
-            updated
+        try {
+            val createResponse = apiService.createPlaylist(
+                CreatePlaylistRequest(name = name.trim(), description = description.trim())
+            )
+            val createdPlaylistId = createResponse.data.id
+
+            tracks.forEach { track ->
+                try {
+                    apiService.addTrackToPlaylist(createdPlaylistId, AddTrackRequest(track.id))
+                } catch (e: Exception) {
+                    android.util.Log.e("NetworkLibraryRepository", "addTrack error: ${track.id}", e)
+                }
+            }
+
+            val finalResponse = apiService.getPlaylistDetail(createdPlaylistId)
+            val finalPlaylist = finalResponse.data.toDomain()
+
+            _playlists.update { current ->
+                listOf(finalPlaylist) + current
+            }
+
+            Result.success(finalPlaylist)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        Result.success(newPlaylist)
     }
 
-    override suspend fun deletePlaylist(id: String): Result<Unit> = withContext(Dispatchers.Default) {
-        var found = false
+    override suspend fun deletePlaylist(id: String): Result<Unit> = withContext(Dispatchers.IO) {
         _playlists.update { current ->
-            val updated = current.filter { it.id != id }
-            if (updated.size < current.size) {
-                found = true
-            }
-            savePlaylistsLocally(updated)
-            updated
+            current.filter { it.id != id }
         }
-        if (found) {
-            Result.success(Unit)
-        } else {
-            Result.failure(NoSuchElementException("Çalma listesi bulunamadı."))
-        }
+        Result.success(Unit)
     }
 
     override suspend fun getAvailableTracks(): Result<List<NowPlayingTrack>> = withContext(Dispatchers.IO) {
         try {
             val response = apiService.getSongs(limit = 100)
             Result.success(response.data.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun removeTrackFromPlaylist(playlistId: String, songId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            apiService.removeTrackFromPlaylist(playlistId, songId)
+            _playlists.update { current ->
+                current.map { playlist ->
+                    if (playlist.id == playlistId) {
+                        playlist.copy(tracks = playlist.tracks.filter { it.id != songId })
+                    } else {
+                        playlist
+                    }
+                }
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -187,6 +181,19 @@ class NetworkLibraryRepository @Inject constructor(
             artworkStartColor = colors.first,
             artworkEndColor = colors.second,
             tracks = tracks
+        )
+    }
+
+    private fun PlaylistDetailDto.toDomain(): Playlist {
+        val colors = NowPlayingTrack.getColorsForId(id)
+        return Playlist(
+            id = id,
+            name = name,
+            description = description ?: "",
+            isPublic = true,
+            artworkStartColor = colors.first,
+            artworkEndColor = colors.second,
+            tracks = songs.map { it.toDomain() }
         )
     }
 }

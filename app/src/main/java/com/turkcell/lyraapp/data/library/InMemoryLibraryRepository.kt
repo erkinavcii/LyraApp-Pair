@@ -137,6 +137,20 @@ class InMemoryLibraryRepository @Inject constructor() : LibraryRepository {
         return Result.success(ALL_TRACKS)
     }
 
+    override suspend fun removeTrackFromPlaylist(playlistId: String, songId: String): Result<Unit> {
+        delay(NETWORK_DELAY_MS)
+        _playlists.update { current ->
+            current.map { playlist ->
+                if (playlist.id == playlistId) {
+                    playlist.copy(tracks = playlist.tracks.filter { it.id != songId })
+                } else {
+                    playlist
+                }
+            }
+        }
+        return Result.success(Unit)
+    }
+
     private companion object {
         const val NETWORK_DELAY_MS = 400L
 

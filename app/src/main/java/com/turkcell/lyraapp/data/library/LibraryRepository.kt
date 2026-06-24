@@ -14,4 +14,5 @@ interface LibraryRepository {
     ): Result<Playlist>
     suspend fun deletePlaylist(id: String): Result<Unit>
     suspend fun getAvailableTracks(): Result<List<NowPlayingTrack>>
+    suspend fun removeTrackFromPlaylist(playlistId: String, songId: String): Result<Unit>
 }

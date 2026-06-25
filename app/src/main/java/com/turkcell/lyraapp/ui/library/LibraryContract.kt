@@ -17,6 +17,7 @@ data class LibraryUiState(
     val playlists: List<Playlist> = emptyList(),
     val filteredPlaylists: List<Playlist> = emptyList(), // Türetilir
     val favoritesCount: Int = 0,
+    val downloadedCount: Int = 0,
 )
 
 sealed interface LibraryIntent {

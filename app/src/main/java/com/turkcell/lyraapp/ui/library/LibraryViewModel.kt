@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.library.LibraryRepository
+import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,7 @@ import javax.inject.Inject
 class LibraryViewModel @Inject constructor(
     private val libraryRepository: LibraryRepository,
     private val favoritesRepository: FavoritesRepository,
+    private val playerRepository: PlayerRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LibraryUiState())
@@ -39,6 +41,13 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             favoritesRepository.favorites.collect { favoritedTracks ->
                 updateState { it.copy(favoritesCount = favoritedTracks.size) }
+            }
+        }
+
+        // Downloaded tracks flow gözlemlenerek "İndirilen Şarkılar" sayısının canlı kalması sağlanıyor
+        viewModelScope.launch {
+            playerRepository.downloadedTracks.collect { downloadedTracks ->
+                updateState { it.copy(downloadedCount = downloadedTracks.size) }
             }
         }
     }

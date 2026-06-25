@@ -14,8 +14,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.net.URL
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -33,6 +37,9 @@ class InMemoryPlayerRepository @Inject constructor(
 
     private val _currentPositionMs = MutableStateFlow(0L)
     override val currentPositionMs: StateFlow<Long> = _currentPositionMs.asStateFlow()
+
+    private val _downloadingTrackIds = MutableStateFlow<Set<String>>(emptySet())
+    override val downloadingTrackIds: StateFlow<Set<String>> = _downloadingTrackIds.asStateFlow()
 
     private var queue: List<NowPlayingTrack> = emptyList()
     private var currentIndex: Int = -1
@@ -61,11 +68,17 @@ class InMemoryPlayerRepository @Inject constructor(
             startMediaService()
 
             try {
-                // Fetch the signed streaming URL from the API
-                val response = withContext(Dispatchers.IO) {
-                    apiService.getStreamUrl(track.id)
+                // Check if the track has been downloaded offline
+                val localFile = File(context.filesDir, "offline_songs/${track.id}.mp3")
+                val dataSource = if (localFile.exists() && localFile.length() > 0) {
+                    localFile.absolutePath
+                } else {
+                    // Fetch the signed streaming URL from the API
+                    val response = withContext(Dispatchers.IO) {
+                        apiService.getStreamUrl(track.id)
+                    }
+                    response.data.url
                 }
-                val streamUrl = response.data.url
 
                 // Initialize MediaPlayer
                 val mp = MediaPlayer().apply {
@@ -75,7 +88,7 @@ class InMemoryPlayerRepository @Inject constructor(
                             .setUsage(AudioAttributes.USAGE_MEDIA)
                             .build()
                     )
-                    setDataSource(streamUrl)
+                    setDataSource(dataSource)
                     setOnPreparedListener {
                         start()
                         _isPlaying.value = true
@@ -182,5 +195,64 @@ class InMemoryPlayerRepository @Inject constructor(
         if (queue.isEmpty()) return
         currentIndex = (currentIndex - 1 + queue.size) % queue.size
         playUrl(queue[currentIndex])
+    }
+
+    override fun isTrackDownloaded(trackId: String): Boolean {
+        val file = File(context.filesDir, "offline_songs/${trackId}.mp3")
+        return file.exists() && file.length() > 0
+    }
+
+    override suspend fun downloadTrack(trackId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        if (isTrackDownloaded(trackId)) {
+            return@withContext Result.success(Unit)
+        }
+
+        _downloadingTrackIds.update { it + trackId }
+        try {
+            // 1. Get stream URL
+            val response = apiService.getStreamUrl(trackId)
+            val streamUrl = response.data.url
+
+            // 2. Download the bytes
+            val url = URL(streamUrl)
+            val connection = url.openConnection()
+            connection.connect()
+
+            val input = connection.getInputStream()
+            val outputFile = File(context.filesDir, "offline_songs/${trackId}.mp3")
+            outputFile.parentFile?.mkdirs()
+
+            val output = FileOutputStream(outputFile)
+            val data = ByteArray(4096)
+            var count: Int
+            while (input.read(data).also { count = it } != -1) {
+                output.write(data, 0, count)
+            }
+
+            output.flush()
+            output.close()
+            input.close()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            android.util.Log.e("PlayerRepository", "Download failed for track $trackId", e)
+            // Cleanup failed file if exists
+            try {
+                val file = File(context.filesDir, "offline_songs/${trackId}.mp3")
+                if (file.exists()) file.delete()
+            } catch (ignored: Exception) {}
+            Result.failure(e)
+        } finally {
+            _downloadingTrackIds.update { it - trackId }
+        }
+    }
+
+    override fun deleteDownloadedTrack(trackId: String): Boolean {
+        val file = File(context.filesDir, "offline_songs/${trackId}.mp3")
+        return if (file.exists()) {
+            file.delete()
+        } else {
+            false
+        }
     }
 }

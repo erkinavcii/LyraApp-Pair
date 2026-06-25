@@ -124,10 +124,15 @@ class PlaylistDetailViewModel @Inject constructor(
     }
 
     private fun downloadPlaylist() {
+        val tracks = _uiState.value.playlist?.tracks ?: return
         if (_uiState.value.isDownloading) return
         viewModelScope.launch {
             _uiState.update { it.copy(isDownloading = true) }
-            kotlinx.coroutines.delay(1500L) // İndirme simülasyonu
+            tracks.forEach { track ->
+                try {
+                    playerRepository.downloadTrack(track.id)
+                } catch (ignored: Exception) {}
+            }
             _uiState.update { it.copy(isDownloading = false) }
         }
     }

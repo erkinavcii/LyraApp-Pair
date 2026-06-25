@@ -10,6 +10,8 @@ data class NowPlayingUiState(
     val isRepeating: Boolean = false,
     val progress: Float = 0f,
     val currentPositionMs: Long = 0L,
+    val isDownloaded: Boolean = false,
+    val isDownloading: Boolean = false,
 )
 
 sealed interface NowPlayingIntent {
@@ -21,6 +23,7 @@ sealed interface NowPlayingIntent {
     data object SkipPrevious : NowPlayingIntent
     data object SkipNext : NowPlayingIntent
     data object Dismiss : NowPlayingIntent
+    data object DownloadClick : NowPlayingIntent
 }
 
 sealed interface NowPlayingEffect {

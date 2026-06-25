@@ -60,11 +60,22 @@ class FavoritesViewModel @Inject constructor(
         when (intent) {
             is FavoritesIntent.PlayAll -> playAll()
             is FavoritesIntent.ShufflePlay -> shufflePlay()
-            is FavoritesIntent.Download -> Unit
+            is FavoritesIntent.Download -> downloadAllFavorites()
             is FavoritesIntent.PlayTrack -> playTrack(intent.track)
             is FavoritesIntent.ToggleFavorite -> favoritesRepository.toggleFavorite(intent.track)
             is FavoritesIntent.NavigateBack -> viewModelScope.launch { _effect.send(FavoritesEffect.NavigateBack) }
             is FavoritesIntent.OpenNowPlaying -> viewModelScope.launch { _effect.send(FavoritesEffect.NavigateToNowPlaying) }
+        }
+    }
+
+    private fun downloadAllFavorites() {
+        viewModelScope.launch {
+            val tracks = _uiState.value.tracks
+            tracks.forEach { track ->
+                try {
+                    playerRepository.downloadTrack(track.id)
+                } catch (ignored: Exception) {}
+            }
         }
     }
 

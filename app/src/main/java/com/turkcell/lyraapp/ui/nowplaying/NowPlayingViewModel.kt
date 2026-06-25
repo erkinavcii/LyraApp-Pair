@@ -38,10 +38,12 @@ class NowPlayingViewModel @Inject constructor(
                     lastRecordedTrackId = track.id
                     recordPlay(track.id)
                 }
+                val downloaded = track?.let { playerRepository.isTrackDownloaded(it.id) } ?: false
                 _uiState.update { state ->
                     state.copy(
                         track = track,
                         isFavorited = track?.let { favoritesRepository.isFavorite(it.id) } ?: false,
+                        isDownloaded = downloaded,
                         currentPositionMs = 0L,
                         progress = 0f
                     )
@@ -71,6 +73,14 @@ class NowPlayingViewModel @Inject constructor(
                 _uiState.update { it.copy(isFavorited = currentId != null && favorites.any { f -> f.id == currentId }) }
             }
         }
+        viewModelScope.launch {
+            playerRepository.downloadingTrackIds.collect { downloadingIds ->
+                val currentId = _uiState.value.track?.id
+                val downloading = currentId != null && downloadingIds.contains(currentId)
+                val downloaded = currentId != null && playerRepository.isTrackDownloaded(currentId)
+                _uiState.update { it.copy(isDownloading = downloading, isDownloaded = downloaded) }
+            }
+        }
     }
 
     fun onIntent(intent: NowPlayingIntent) {
@@ -91,6 +101,7 @@ class NowPlayingViewModel @Inject constructor(
                 playerRepository.skipNext()
                 seekTo(0f)
             }
+            is NowPlayingIntent.DownloadClick -> downloadCurrentTrack()
             is NowPlayingIntent.Dismiss -> viewModelScope.launch { _effect.send(NowPlayingEffect.NavigateBack) }
         }
     }
@@ -109,6 +120,26 @@ class NowPlayingViewModel @Inject constructor(
                 progress = clamped,
                 currentPositionMs = position,
             )
+        }
+    }
+
+    private fun downloadCurrentTrack() {
+        val track = _uiState.value.track ?: return
+        if (_uiState.value.isDownloading) return
+
+        viewModelScope.launch {
+            if (_uiState.value.isDownloaded) {
+                playerRepository.deleteDownloadedTrack(track.id)
+                _uiState.update { it.copy(isDownloaded = false) }
+            } else {
+                playerRepository.downloadTrack(track.id)
+                    .onSuccess {
+                        _uiState.update { it.copy(isDownloaded = true) }
+                    }
+                    .onFailure {
+                        // ignore or show error
+                    }
+            }
         }
     }
 }

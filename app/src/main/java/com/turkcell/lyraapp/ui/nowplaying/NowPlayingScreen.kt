@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -123,7 +124,10 @@ fun NowPlayingScreen(
                 title = track?.title ?: "",
                 subtitle = track?.subtitle ?: "",
                 isFavorited = state.isFavorited,
+                isDownloaded = state.isDownloaded,
+                isDownloading = state.isDownloading,
                 onToggleFavorite = { onIntent(NowPlayingIntent.ToggleFavorite) },
+                onDownloadClick = { onIntent(NowPlayingIntent.DownloadClick) },
             )
 
             Spacer(Modifier.height(16.dp))
@@ -230,7 +234,10 @@ private fun TrackInfo(
     title: String,
     subtitle: String,
     isFavorited: Boolean,
+    isDownloaded: Boolean,
+    isDownloading: Boolean,
     onToggleFavorite: () -> Unit,
+    onDownloadClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -251,6 +258,27 @@ private fun TrackInfo(
                 maxLines = 1,
             )
         }
+        
+        // Indirme Butonu
+        IconButton(onClick = onDownloadClick) {
+            if (isDownloading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = Color(0xFFF48FB1)
+                )
+            } else {
+                Icon(
+                    imageVector = LyraIcons.Download,
+                    contentDescription = "Cevrimdisi indir",
+                    tint = if (isDownloaded) Color(0xFF4AC2A8) else Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(8.dp))
+
         IconButton(onClick = onToggleFavorite) {
             Icon(
                 imageVector = if (isFavorited) LyraIcons.Favorite else LyraIcons.FavoriteOutlined,

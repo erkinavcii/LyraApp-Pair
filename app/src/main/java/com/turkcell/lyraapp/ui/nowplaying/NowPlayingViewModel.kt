@@ -132,7 +132,7 @@ class NowPlayingViewModel @Inject constructor(
                 playerRepository.deleteDownloadedTrack(track.id)
                 _uiState.update { it.copy(isDownloaded = false) }
             } else {
-                playerRepository.downloadTrack(track.id)
+                playerRepository.downloadTrack(track)
                     .onSuccess {
                         _uiState.update { it.copy(isDownloaded = true) }
                     }

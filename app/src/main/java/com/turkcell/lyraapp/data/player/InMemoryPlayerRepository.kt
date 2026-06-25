@@ -41,6 +41,13 @@ class InMemoryPlayerRepository @Inject constructor(
     private val _downloadingTrackIds = MutableStateFlow<Set<String>>(emptySet())
     override val downloadingTrackIds: StateFlow<Set<String>> = _downloadingTrackIds.asStateFlow()
 
+    private val _downloadedTracks = MutableStateFlow<List<NowPlayingTrack>>(emptyList())
+    override val downloadedTracks: StateFlow<List<NowPlayingTrack>> = _downloadedTracks.asStateFlow()
+
+    init {
+        loadDownloadedTracksMetadata()
+    }
+
     private var queue: List<NowPlayingTrack> = emptyList()
     private var currentIndex: Int = -1
 
@@ -202,8 +209,76 @@ class InMemoryPlayerRepository @Inject constructor(
         return file.exists() && file.length() > 0
     }
 
-    override suspend fun downloadTrack(trackId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    private fun loadDownloadedTracksMetadata() {
+        try {
+            val file = File(context.filesDir, "offline_songs/metadata.json")
+            if (!file.exists()) {
+                _downloadedTracks.value = emptyList()
+                return
+            }
+            val jsonStr = file.readText()
+            val jsonArray = org.json.JSONArray(jsonStr)
+            val tracks = mutableListOf<NowPlayingTrack>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                val id = obj.getString("id")
+                
+                // Verify if the actual .mp3 file exists on disk
+                val mp3File = File(context.filesDir, "offline_songs/$id.mp3")
+                if (mp3File.exists() && mp3File.length() > 0) {
+                    tracks.add(
+                        NowPlayingTrack(
+                            id = id,
+                            title = obj.getString("title"),
+                            subtitle = obj.getString("subtitle"),
+                            startColor = obj.getLong("startColor"),
+                            endColor = obj.getLong("endColor"),
+                            durationMs = obj.optLong("durationMs", 223_000L)
+                        )
+                    )
+                }
+            }
+            _downloadedTracks.value = tracks
+            
+            // If some tracks were missing their files, save updated list
+            if (tracks.size < jsonArray.length()) {
+                saveDownloadedTracksMetadata()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PlayerRepository", "Failed to load downloaded tracks metadata", e)
+            _downloadedTracks.value = emptyList()
+        }
+    }
+
+    private fun saveDownloadedTracksMetadata() {
+        try {
+            val file = File(context.filesDir, "offline_songs/metadata.json")
+            file.parentFile?.mkdirs()
+            val jsonArray = org.json.JSONArray()
+            _downloadedTracks.value.forEach { track ->
+                val obj = org.json.JSONObject().apply {
+                    put("id", track.id)
+                    put("title", track.title)
+                    put("subtitle", track.subtitle)
+                    put("startColor", track.startColor)
+                    put("endColor", track.endColor)
+                    put("durationMs", track.durationMs)
+                }
+                jsonArray.put(obj)
+            }
+            file.writeText(jsonArray.toString(2))
+        } catch (e: Exception) {
+            android.util.Log.e("PlayerRepository", "Failed to save downloaded tracks metadata", e)
+        }
+    }
+
+    override suspend fun downloadTrack(track: NowPlayingTrack): Result<Unit> = withContext(Dispatchers.IO) {
+        val trackId = track.id
         if (isTrackDownloaded(trackId)) {
+            if (!_downloadedTracks.value.any { it.id == trackId }) {
+                _downloadedTracks.update { it + track }
+                saveDownloadedTracksMetadata()
+            }
             return@withContext Result.success(Unit)
         }
 
@@ -233,6 +308,16 @@ class InMemoryPlayerRepository @Inject constructor(
             output.close()
             input.close()
 
+            // 3. Add to downloaded tracks and save metadata
+            _downloadedTracks.update { currentList ->
+                if (!currentList.any { it.id == trackId }) {
+                    currentList + track
+                } else {
+                    currentList
+                }
+            }
+            saveDownloadedTracksMetadata()
+
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("PlayerRepository", "Download failed for track $trackId", e)
@@ -249,10 +334,17 @@ class InMemoryPlayerRepository @Inject constructor(
 
     override fun deleteDownloadedTrack(trackId: String): Boolean {
         val file = File(context.filesDir, "offline_songs/${trackId}.mp3")
-        return if (file.exists()) {
+        val deleted = if (file.exists()) {
             file.delete()
         } else {
             false
         }
+        
+        _downloadedTracks.update { currentList ->
+            currentList.filter { it.id != trackId }
+        }
+        saveDownloadedTracksMetadata()
+        
+        return deleted
     }
 }

@@ -73,7 +73,7 @@ class FavoritesViewModel @Inject constructor(
             val tracks = _uiState.value.tracks
             tracks.forEach { track ->
                 try {
-                    playerRepository.downloadTrack(track.id)
+                    playerRepository.downloadTrack(track)
                 } catch (ignored: Exception) {}
             }
         }

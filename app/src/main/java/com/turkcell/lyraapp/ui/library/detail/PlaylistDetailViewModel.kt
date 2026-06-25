@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.library.LibraryRepository
+import com.turkcell.lyraapp.data.library.Playlist
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -83,16 +84,35 @@ class PlaylistDetailViewModel @Inject constructor(
     }
 
     private fun loadPlaylist(playlistId: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            libraryRepository.getPlaylistById(playlistId)
-                .onSuccess { loadedPlaylist ->
-                    _uiState.update { it.copy(isLoading = false, playlist = loadedPlaylist) }
+        if (playlistId == "downloads") {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
+                playerRepository.downloadedTracks.collect { tracks ->
+                    val downloadsPlaylist = Playlist(
+                        id = "downloads",
+                        name = "İndirilen Şarkılar",
+                        description = "Cihazınıza indirilmiş ve çevrimdışı çalınabilir şarkılar.",
+                        isPublic = false,
+                        artworkStartColor = 0xFF34D399L,
+                        artworkEndColor = 0xFF10B981L,
+                        tracks = tracks,
+                        isPinned = true
+                    )
+                    _uiState.update { it.copy(isLoading = false, playlist = downloadsPlaylist) }
                 }
-                .onFailure { error ->
-                    _uiState.update { it.copy(isLoading = false) }
-                    _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Çalma listesi yüklenemedi."))
-                }
+            }
+        } else {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true) }
+                libraryRepository.getPlaylistById(playlistId)
+                    .onSuccess { loadedPlaylist ->
+                        _uiState.update { it.copy(isLoading = false, playlist = loadedPlaylist) }
+                    }
+                    .onFailure { error ->
+                        _uiState.update { it.copy(isLoading = false) }
+                        _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Çalma listesi yüklenemedi."))
+                    }
+            }
         }
     }
 
@@ -130,7 +150,7 @@ class PlaylistDetailViewModel @Inject constructor(
             _uiState.update { it.copy(isDownloading = true) }
             tracks.forEach { track ->
                 try {
-                    playerRepository.downloadTrack(track.id)
+                    playerRepository.downloadTrack(track)
                 } catch (ignored: Exception) {}
             }
             _uiState.update { it.copy(isDownloading = false) }
@@ -139,20 +159,24 @@ class PlaylistDetailViewModel @Inject constructor(
 
     private fun removeTrack(trackId: String) {
         val playlistId = _uiState.value.playlist?.id ?: return
-        viewModelScope.launch {
-            libraryRepository.removeTrackFromPlaylist(playlistId, trackId)
-                .onSuccess {
-                    _uiState.update { state ->
-                        state.copy(
-                            playlist = state.playlist?.copy(
-                                tracks = state.playlist.tracks.filter { it.id != trackId }
+        if (playlistId == "downloads") {
+            playerRepository.deleteDownloadedTrack(trackId)
+        } else {
+            viewModelScope.launch {
+                libraryRepository.removeTrackFromPlaylist(playlistId, trackId)
+                    .onSuccess {
+                        _uiState.update { state ->
+                            state.copy(
+                                playlist = state.playlist?.copy(
+                                    tracks = state.playlist.tracks.filter { it.id != trackId }
+                                )
                             )
-                        )
+                        }
                     }
-                }
-                .onFailure { error ->
-                    _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Şarkı çalma listesinden silinemedi."))
-                }
+                    .onFailure { error ->
+                        _effect.send(PlaylistDetailEffect.ShowError(error.message ?: "Şarkı çalma listesinden silinemedi."))
+                    }
+            }
         }
     }
 }

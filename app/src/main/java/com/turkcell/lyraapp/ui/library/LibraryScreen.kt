@@ -129,9 +129,11 @@ fun LibraryScreen(
                         PlaylistsContent(
                             isGridView = state.isGridView,
                             favoritesCount = state.favoritesCount,
+                            downloadedCount = state.downloadedCount,
                             playlists = state.filteredPlaylists,
                             onPlaylistClick = { onIntent(LibraryIntent.ClickPlaylist(it)) },
-                            onFavoritesClick = { onIntent(LibraryIntent.ClickFavorites) }
+                            onFavoritesClick = { onIntent(LibraryIntent.ClickFavorites) },
+                            onDownloadsClick = { onIntent(LibraryIntent.ClickPlaylist("downloads")) }
                         )
                     }
                     LibraryTab.Artists -> {
@@ -356,9 +358,11 @@ private fun LibrarySortRow(
 private fun PlaylistsContent(
     isGridView: Boolean,
     favoritesCount: Int,
+    downloadedCount: Int,
     playlists: List<Playlist>,
     onPlaylistClick: (String) -> Unit,
-    onFavoritesClick: () -> Unit
+    onFavoritesClick: () -> Unit,
+    onDownloadsClick: () -> Unit
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -371,6 +375,12 @@ private fun PlaylistsContent(
                 GridFavoritesItem(
                     favoritesCount = favoritesCount,
                     onClick = onFavoritesClick
+                )
+            }
+            item {
+                GridDownloadsItem(
+                    downloadedCount = downloadedCount,
+                    onClick = onDownloadsClick
                 )
             }
             items(playlists, key = { it.id }) { playlist ->
@@ -391,6 +401,12 @@ private fun PlaylistsContent(
                     onClick = onFavoritesClick
                 )
             }
+            item {
+                ListDownloadsItem(
+                    downloadedCount = downloadedCount,
+                    onClick = onDownloadsClick
+                )
+            }
             items(playlists, key = { it.id }) { playlist ->
                 ListPlaylistItem(
                     playlist = playlist,
@@ -398,6 +414,121 @@ private fun PlaylistsContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ListDownloadsItem(
+    downloadedCount: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF34D399), Color(0xFF10B981))
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = LyraIcons.Download,
+                contentDescription = null,
+                tint = Color(0xFF064E3B),
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "İndirilen Şarkılar",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "Çevrimdışı çalma listesi · $downloadedCount şarkı",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            imageVector = LyraIcons.Pin,
+            contentDescription = "Sabitlendi",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+@Composable
+private fun GridDownloadsItem(
+    downloadedCount: Int,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(Color(0xFF34D399), Color(0xFF10B981))
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = LyraIcons.Download,
+                contentDescription = null,
+                tint = Color(0xFF064E3B),
+                modifier = Modifier.size(44.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = LyraIcons.Pin,
+                    contentDescription = "Sabitlendi",
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "İndirilen Şarkılar",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1
+        )
+        Text(
+            text = "$downloadedCount şarkı",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
 

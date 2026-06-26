@@ -17,6 +17,9 @@ interface PlayerRepository {
     fun togglePlayPause()
     fun seekTo(positionMs: Long)
 
+    fun setRepeat(enabled: Boolean)
+    fun setShuffle(enabled: Boolean)
+
     fun isTrackDownloaded(trackId: String): Boolean
     suspend fun downloadTrack(track: NowPlayingTrack): Result<Unit>
     fun deleteDownloadedTrack(trackId: String): Boolean

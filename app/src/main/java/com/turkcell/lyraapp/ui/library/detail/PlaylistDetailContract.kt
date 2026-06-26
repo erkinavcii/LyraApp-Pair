@@ -14,6 +14,7 @@ data class PlaylistDetailUiState(
     val isAddTrackSheetVisible: Boolean = false,
     val availableTracks: List<NowPlayingTrack> = emptyList(),
     val isAddingTrack: Boolean = false,
+    val ownerName: String = "",
 )
 
 sealed interface PlaylistDetailIntent {

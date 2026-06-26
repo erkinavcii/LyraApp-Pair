@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.home.HomeRepository
+import com.turkcell.lyraapp.data.library.LibraryRepository
 import com.turkcell.lyraapp.data.player.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -21,6 +22,7 @@ class NowPlayingViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val favoritesRepository: FavoritesRepository,
     private val homeRepository: HomeRepository,
+    private val libraryRepository: LibraryRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NowPlayingUiState())
@@ -81,6 +83,11 @@ class NowPlayingViewModel @Inject constructor(
                 _uiState.update { it.copy(isDownloading = downloading, isDownloaded = downloaded) }
             }
         }
+        viewModelScope.launch {
+            libraryRepository.playlists.collect { playlists ->
+                _uiState.update { it.copy(playlists = playlists.filter { p -> p.isOwnedByUser }) }
+            }
+        }
     }
 
     fun onIntent(intent: NowPlayingIntent) {
@@ -90,8 +97,16 @@ class NowPlayingViewModel @Inject constructor(
                 val track = _uiState.value.track ?: return
                 favoritesRepository.toggleFavorite(track)
             }
-            is NowPlayingIntent.ToggleShuffle -> _uiState.update { it.copy(isShuffling = !it.isShuffling) }
-            is NowPlayingIntent.ToggleRepeat -> _uiState.update { it.copy(isRepeating = !it.isRepeating) }
+            is NowPlayingIntent.ToggleShuffle -> {
+                val newVal = !_uiState.value.isShuffling
+                _uiState.update { it.copy(isShuffling = newVal) }
+                playerRepository.setShuffle(newVal)
+            }
+            is NowPlayingIntent.ToggleRepeat -> {
+                val newVal = !_uiState.value.isRepeating
+                _uiState.update { it.copy(isRepeating = newVal) }
+                playerRepository.setRepeat(newVal)
+            }
             is NowPlayingIntent.SeekTo -> seekTo(intent.progress)
             is NowPlayingIntent.SkipPrevious -> {
                 playerRepository.skipPrevious()
@@ -103,6 +118,9 @@ class NowPlayingViewModel @Inject constructor(
             }
             is NowPlayingIntent.DownloadClick -> downloadCurrentTrack()
             is NowPlayingIntent.Dismiss -> viewModelScope.launch { _effect.send(NowPlayingEffect.NavigateBack) }
+            is NowPlayingIntent.AddToPlaylistClick -> _uiState.update { it.copy(showPlaylistPicker = true) }
+            is NowPlayingIntent.DismissPlaylistPicker -> _uiState.update { it.copy(showPlaylistPicker = false) }
+            is NowPlayingIntent.AddToPlaylist -> addToPlaylist(intent.playlistId)
         }
     }
 
@@ -123,6 +141,17 @@ class NowPlayingViewModel @Inject constructor(
         }
     }
 
+    private fun addToPlaylist(playlistId: String) {
+        val track = _uiState.value.track ?: return
+        val playlist = _uiState.value.playlists.find { it.id == playlistId } ?: return
+        _uiState.update { it.copy(showPlaylistPicker = false) }
+        viewModelScope.launch {
+            libraryRepository.addTrackToPlaylist(playlistId, track)
+                .onSuccess { _effect.send(NowPlayingEffect.ShowAddToPlaylistSuccess(playlist.name)) }
+                .onFailure { _effect.send(NowPlayingEffect.ShowAddToPlaylistError) }
+        }
+    }
+
     private fun downloadCurrentTrack() {
         val track = _uiState.value.track ?: return
         if (_uiState.value.isDownloading) return
@@ -135,9 +164,10 @@ class NowPlayingViewModel @Inject constructor(
                 playerRepository.downloadTrack(track)
                     .onSuccess {
                         _uiState.update { it.copy(isDownloaded = true) }
+                        _effect.send(NowPlayingEffect.ShowDownloadSuccess)
                     }
                     .onFailure {
-                        // ignore or show error
+                        _effect.send(NowPlayingEffect.ShowDownloadError)
                     }
             }
         }

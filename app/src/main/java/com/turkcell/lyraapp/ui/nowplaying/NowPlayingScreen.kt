@@ -1,6 +1,7 @@
 package com.turkcell.lyraapp.ui.nowplaying
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,15 +17,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.turkcell.lyraapp.data.library.Playlist
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
 import com.turkcell.lyraapp.ui.icons.LyraIcons
 
@@ -53,11 +64,16 @@ fun NowPlayingRoute(
     viewModel: NowPlayingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 NowPlayingEffect.NavigateBack -> onNavigateBack()
+                NowPlayingEffect.ShowDownloadSuccess -> snackbarHostState.showSnackbar("Sarki indirildi")
+                NowPlayingEffect.ShowDownloadError -> snackbarHostState.showSnackbar("Indirme basarisiz oldu")
+                is NowPlayingEffect.ShowAddToPlaylistSuccess -> snackbarHostState.showSnackbar("\"${effect.playlistName}\" listesine eklendi")
+                NowPlayingEffect.ShowAddToPlaylistError -> snackbarHostState.showSnackbar("Sarki zaten bu listede")
             }
         }
     }
@@ -65,15 +81,18 @@ fun NowPlayingRoute(
     NowPlayingScreen(
         state = uiState,
         onIntent = viewModel::onIntent,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingScreen(
     state: NowPlayingUiState,
     onIntent: (NowPlayingIntent) -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val track = state.track
     val startColor = Color(track?.startColor ?: 0xFF3A2A1A)
@@ -105,6 +124,7 @@ fun NowPlayingScreen(
                 subtitle = track?.subtitle ?: "",
                 title = track?.title ?: "",
                 onDismiss = { onIntent(NowPlayingIntent.Dismiss) },
+                onAddToPlaylistClick = { onIntent(NowPlayingIntent.AddToPlaylistClick) },
             )
 
             Spacer(Modifier.height(32.dp))
@@ -156,6 +176,56 @@ fun NowPlayingScreen(
 
             BottomActions()
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = Color(0xFF2A2A2A),
+                contentColor = Color.White,
+            )
+        }
+    }
+
+    if (state.showPlaylistPicker) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { onIntent(NowPlayingIntent.DismissPlaylistPicker) },
+            sheetState = sheetState,
+            containerColor = Color(0xFF1A1A1A),
+        ) {
+            Column(modifier = Modifier.navigationBarsPadding()) {
+                Text(
+                    text = "Playlist'e Ekle",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                if (state.playlists.isEmpty()) {
+                    Text(
+                        text = "Henuz playlist olusturmadiniz",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(24.dp),
+                    )
+                } else {
+                    LazyColumn {
+                        items(state.playlists, key = { it.id }) { playlist ->
+                            PlaylistPickerItem(
+                                playlist = playlist,
+                                onClick = { onIntent(NowPlayingIntent.AddToPlaylist(playlist.id)) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -164,7 +234,10 @@ private fun TopBar(
     subtitle: String,
     title: String,
     onDismiss: () -> Unit,
+    onAddToPlaylistClick: () -> Unit,
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -195,12 +268,41 @@ private fun TopBar(
                 maxLines = 1,
             )
         }
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = LyraIcons.MoreVert,
-                contentDescription = "Diger secenekler",
-                tint = Color.White,
-            )
+        Box {
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(
+                    imageVector = LyraIcons.MoreVert,
+                    contentDescription = "Diger secenekler",
+                    tint = Color.White,
+                )
+            }
+            androidx.compose.material3.DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                containerColor = Color(0xFF2A2A2A),
+            ) {
+                androidx.compose.material3.DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = "Playlist'e Ekle",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = LyraIcons.Add,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        onAddToPlaylistClick()
+                    },
+                )
+            }
         }
     }
 }
@@ -269,9 +371,9 @@ private fun TrackInfo(
                 )
             } else {
                 Icon(
-                    imageVector = LyraIcons.Download,
-                    contentDescription = "Cevrimdisi indir",
-                    tint = if (isDownloaded) Color(0xFF4AC2A8) else Color.White.copy(alpha = 0.7f),
+                    imageVector = if (isDownloaded) LyraIcons.Check else LyraIcons.Download,
+                    contentDescription = if (isDownloaded) "Indirildi" else "Cevrimdisi indir",
+                    tint = if (isDownloaded) Color(0xFF4AC2A8) else Color(0xFF9E9E9E),
                     modifier = Modifier.size(28.dp),
                 )
             }
@@ -457,6 +559,57 @@ private fun BottomActions() {
                 modifier = Modifier.size(22.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun PlaylistPickerItem(playlist: Playlist, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(playlist.artworkStartColor), Color(playlist.artworkEndColor))
+                    )
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = LyraIcons.LibraryMusic,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = playlist.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                maxLines = 1,
+            )
+            Text(
+                text = "${playlist.tracks.size} sarki",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.5f),
+            )
+        }
+        Icon(
+            imageVector = LyraIcons.Add,
+            contentDescription = null,
+            tint = Color(0xFFF48FB1),
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

@@ -140,7 +140,8 @@ fun PlaylistDetailScreen(
                         startColor = startColor,
                         endColor = endColor,
                         trackCount = playlist.tracks.size,
-                        totalDurationMs = playlist.tracks.sumOf { it.durationMs }
+                        totalDurationMs = playlist.tracks.sumOf { it.durationMs },
+                        ownerName = state.ownerName,
                     )
                 }
 
@@ -250,7 +251,8 @@ private fun PlaylistHeroSection(
     startColor: Long,
     endColor: Long,
     trackCount: Int,
-    totalDurationMs: Long
+    totalDurationMs: Long,
+    ownerName: String,
 ) {
     val totalMinutes = totalDurationMs / 60_000
 
@@ -294,7 +296,7 @@ private fun PlaylistHeroSection(
 
         // Yazar ve Süre Metadataları
         Text(
-            text = "Zeynep Kaya · $trackCount şarkı · $totalMinutes dk",
+            text = "${ownerName.ifBlank { "Bilinmiyor" }} · $trackCount şarkı · $totalMinutes dk",
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )

@@ -3,6 +3,7 @@ package com.turkcell.lyraapp.ui.library.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turkcell.lyraapp.data.auth.AuthRepository
 import com.turkcell.lyraapp.data.favorites.FavoritesRepository
 import com.turkcell.lyraapp.data.library.LibraryRepository
 import com.turkcell.lyraapp.data.library.Playlist
@@ -26,6 +27,7 @@ class PlaylistDetailViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val favoritesRepository: FavoritesRepository,
     private val playlistFavoritesRepository: PlaylistFavoritesRepository,
+    private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -36,6 +38,8 @@ class PlaylistDetailViewModel @Inject constructor(
     val effect: Flow<PlaylistDetailEffect> = _effect.receiveAsFlow()
 
     init {
+        _uiState.update { it.copy(ownerName = authRepository.getLoggedInUserName() ?: "") }
+
         val playlistId: String? = savedStateHandle["playlistId"]
         if (playlistId != null) {
             loadPlaylist(playlistId)

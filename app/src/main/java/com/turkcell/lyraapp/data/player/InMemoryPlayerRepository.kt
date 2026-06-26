@@ -48,7 +48,10 @@ class InMemoryPlayerRepository @Inject constructor(
     override val downloadedTracks: StateFlow<List<NowPlayingTrack>> = _downloadedTracks.asStateFlow()
 
     private var queue: List<NowPlayingTrack> = emptyList()
+    private var originalQueue: List<NowPlayingTrack> = emptyList()
     private var currentIndex: Int = -1
+    private var isRepeating = false
+    private var isShuffling = false
 
     private var mediaPlayer: MediaPlayer? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -163,13 +166,27 @@ class InMemoryPlayerRepository @Inject constructor(
 
     override fun play(track: NowPlayingTrack) {
         queue = listOf(track)
+        originalQueue = listOf(track)
         currentIndex = 0
         playUrl(track)
     }
 
     override fun playQueue(tracks: List<NowPlayingTrack>, startIndex: Int) {
-        queue = tracks
-        currentIndex = startIndex.coerceIn(0, tracks.lastIndex)
+        originalQueue = tracks
+        if (isShuffling) {
+            val startTrack = tracks.getOrNull(startIndex)
+            if (startTrack != null) {
+                val otherShuffled = tracks.filter { it.id != startTrack.id }.shuffled()
+                queue = listOf(startTrack) + otherShuffled
+                currentIndex = 0
+            } else {
+                queue = tracks.shuffled()
+                currentIndex = 0
+            }
+        } else {
+            queue = tracks
+            currentIndex = startIndex.coerceIn(0, tracks.lastIndex)
+        }
         if (queue.isNotEmpty()) playUrl(queue[currentIndex])
     }
 
@@ -218,6 +235,13 @@ class InMemoryPlayerRepository @Inject constructor(
 
     override fun skipNext() {
         if (queue.isEmpty()) return
+        if (isRepeating) {
+            val current = _currentTrack.value
+            if (current != null) {
+                playUrl(current)
+                return
+            }
+        }
         currentIndex = (currentIndex + 1) % queue.size
         playUrl(queue[currentIndex])
     }
@@ -226,6 +250,34 @@ class InMemoryPlayerRepository @Inject constructor(
         if (queue.isEmpty()) return
         currentIndex = (currentIndex - 1 + queue.size) % queue.size
         playUrl(queue[currentIndex])
+    }
+
+    override fun setRepeat(enabled: Boolean) {
+        isRepeating = enabled
+    }
+
+    override fun setShuffle(enabled: Boolean) {
+        isShuffling = enabled
+        if (enabled) {
+            originalQueue = queue
+            val currentTrack = _currentTrack.value
+            if (currentTrack != null) {
+                val shuffled = queue.filter { it.id != currentTrack.id }.shuffled()
+                queue = listOf(currentTrack) + shuffled
+                currentIndex = 0
+            } else {
+                queue = queue.shuffled()
+                currentIndex = 0
+            }
+        } else {
+            if (originalQueue.isNotEmpty()) {
+                val currentTrack = _currentTrack.value
+                queue = originalQueue
+                if (currentTrack != null) {
+                    currentIndex = queue.indexOfFirst { it.id == currentTrack.id }.coerceAtLeast(0)
+                }
+            }
+        }
     }
 
     override fun isTrackDownloaded(trackId: String): Boolean {

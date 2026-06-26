@@ -1,6 +1,9 @@
 package com.turkcell.lyraapp.data.home
 
 import com.turkcell.lyraapp.data.auth.AuthRepository
+import com.turkcell.lyraapp.data.local.DownloadedSongDao
+import com.turkcell.lyraapp.data.local.RecentlyPlayedDao
+import com.turkcell.lyraapp.data.local.RecentlyPlayedEntity
 import com.turkcell.lyraapp.data.network.LyraApiService
 import com.turkcell.lyraapp.data.network.RecordPlayRequest
 import com.turkcell.lyraapp.data.player.NowPlayingTrack
@@ -11,6 +14,8 @@ import javax.inject.Inject
 class NetworkHomeRepository @Inject constructor(
     private val apiService: LyraApiService,
     private val authRepository: AuthRepository,
+    private val recentlyPlayedDao: RecentlyPlayedDao,
+    private val downloadedSongDao: DownloadedSongDao,
 ) : HomeRepository {
 
     override suspend fun getHomeFeed(): Result<HomeFeed> = withContext(Dispatchers.IO) {
@@ -87,9 +92,41 @@ class NetworkHomeRepository @Inject constructor(
         }
     }
 
-    override suspend fun recordPlay(songId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    override suspend fun getOfflineFeed(): OfflineFeed = withContext(Dispatchers.IO) {
+        val recentlyPlayed = recentlyPlayedDao.getRecent(20).map { entity ->
+            val colors = NowPlayingTrack.getColorsForId(entity.id)
+            RecentlyPlayed(
+                id = entity.id,
+                title = entity.title,
+                subtitle = entity.subtitle,
+                artworkStartColor = colors.first,
+                artworkEndColor = colors.second,
+            )
+        }
+        val downloadedSongs = downloadedSongDao.getAll().map { entity ->
+            val colors = NowPlayingTrack.getColorsForId(entity.id)
+            QuickPick(
+                id = entity.id,
+                title = entity.title,
+                artworkStartColor = colors.first,
+                artworkEndColor = colors.second,
+            )
+        }
+        OfflineFeed(recentlyPlayed = recentlyPlayed, downloadedSongs = downloadedSongs)
+    }
+
+    override suspend fun recordPlay(track: NowPlayingTrack): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            apiService.recordPlay(RecordPlayRequest(songId))
+            apiService.recordPlay(RecordPlayRequest(track.id))
+            recentlyPlayedDao.insert(
+                RecentlyPlayedEntity(
+                    id = track.id,
+                    title = track.title,
+                    subtitle = track.subtitle,
+                    startColor = track.startColor,
+                    endColor = track.endColor,
+                )
+            )
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

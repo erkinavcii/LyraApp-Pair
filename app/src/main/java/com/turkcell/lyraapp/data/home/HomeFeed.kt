@@ -37,3 +37,8 @@ data class Recommendation(
     val artworkStartColor: Long,
     val artworkEndColor: Long,
 )
+
+data class OfflineFeed(
+    val recentlyPlayed: List<RecentlyPlayed>,
+    val downloadedSongs: List<QuickPick>,
+)

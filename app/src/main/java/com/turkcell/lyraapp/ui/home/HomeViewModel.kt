@@ -2,6 +2,8 @@ package com.turkcell.lyraapp.ui.home
 
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -69,14 +71,34 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // --- HOCANIN VERİ YÜKLEME MANTIĞI ---
+    private fun isNetworkAvailable(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     private fun loadFeed() {
         if (_uiState.value.isLoading) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
+            if (!isNetworkAvailable()) {
+                val offlineFeed = homeRepository.getOfflineFeed()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isOffline = true,
+                        offlineRecentlyPlayed = offlineFeed.recentlyPlayed,
+                        offlineDownloadedSongs = offlineFeed.downloadedSongs,
+                    )
+                }
+                return@launch
+            }
+
             val result = homeRepository.getHomeFeed()
-            _uiState.update { it.copy(isLoading = false) }
+            _uiState.update { it.copy(isLoading = false, isOffline = false) }
 
             result
                 .onSuccess { feed ->

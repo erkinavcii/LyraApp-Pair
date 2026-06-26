@@ -119,32 +119,74 @@ fun HomeScreen(
                         NowPlayingTrack(id = rec.id, title = rec.title, subtitle = rec.subtitle, startColor = rec.artworkStartColor, endColor = rec.artworkEndColor)
                     }
 
-                    QuickPicksGrid(
-                        items = state.quickPicks,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, quickPickTracks)) },
-                    )
+                    if (state.isOffline) {
+                        OfflineBanner(isDarkMode = state.isDarkMode)
 
-                    SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
-                    RecentlyPlayedList(
-                        items = state.recentlyPlayed,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
-                    )
+                        if (state.offlineRecentlyPlayed.isNotEmpty()) {
+                            SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
+                            val offlineRecentlyTracks = state.offlineRecentlyPlayed.map { rp ->
+                                NowPlayingTrack(id = rp.id, title = rp.title, subtitle = rp.subtitle, startColor = rp.artworkStartColor, endColor = rp.artworkEndColor)
+                            }
+                            RecentlyPlayedList(
+                                items = state.offlineRecentlyPlayed,
+                                isDarkMode = state.isDarkMode,
+                                onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, offlineRecentlyTracks)) },
+                            )
+                        }
 
-                    SectionHeader(title = "Önerilenler", isDarkMode = state.isDarkMode)
-                    RecommendationsList(
-                        items = state.recommendations,
-                        isDarkMode = state.isDarkMode,
-                        onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recommendationsTracks)) },
-                    )
+                        if (state.offlineDownloadedSongs.isNotEmpty()) {
+                            SectionHeader(title = "İndirilenler", isDarkMode = state.isDarkMode)
+                            val offlineDownloadedTracks = state.offlineDownloadedSongs.map { qp ->
+                                NowPlayingTrack(id = qp.id, title = qp.title, subtitle = "", startColor = qp.artworkStartColor, endColor = qp.artworkEndColor)
+                            }
+                            QuickPicksGrid(
+                                items = state.offlineDownloadedSongs,
+                                isDarkMode = state.isDarkMode,
+                                onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, offlineDownloadedTracks)) },
+                            )
+                        }
 
-                    SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
-                    PlaylistsList(
-                        items = state.playlistsForYou,
-                        isDarkMode = state.isDarkMode,
-                        onPlaylistClick = { playlistId -> onIntent(HomeIntent.PlaylistClicked(playlistId)) },
-                    )
+                        if (state.offlineRecentlyPlayed.isEmpty() && state.offlineDownloadedSongs.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = 64.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Çevrimdisi içerik bulunamadi. Önce internet bağlantısı ile şarkı indirin.",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        QuickPicksGrid(
+                            items = state.quickPicks,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, quickPickTracks)) },
+                        )
+
+                        SectionHeader(title = "Son çalınanlar", isDarkMode = state.isDarkMode)
+                        RecentlyPlayedList(
+                            items = state.recentlyPlayed,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recentlyPlayedTracks)) },
+                        )
+
+                        SectionHeader(title = "Önerilenler", isDarkMode = state.isDarkMode)
+                        RecommendationsList(
+                            items = state.recommendations,
+                            isDarkMode = state.isDarkMode,
+                            onTrackClick = { track -> onIntent(HomeIntent.PlayTrack(track, recommendationsTracks)) },
+                        )
+
+                        SectionHeader(title = "Senin için çalma listeleri", isDarkMode = state.isDarkMode)
+                        PlaylistsList(
+                            items = state.playlistsForYou,
+                            isDarkMode = state.isDarkMode,
+                            onPlaylistClick = { playlistId -> onIntent(HomeIntent.PlaylistClicked(playlistId)) },
+                        )
+                    }
 
                     Spacer(Modifier.height(100.dp))
                 }
@@ -167,6 +209,32 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun OfflineBanner(isDarkMode: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isDarkMode) Color(0xFF2A2A2A) else Color(0xFFE0E0E0))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = LyraIcons.Download,
+            contentDescription = null,
+            tint = Color(0xFFF48FB1),
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = "Çevrimdisi mod — yalnizca indirilen içerikler gösteriliyor",
+            color = Color.Gray,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 

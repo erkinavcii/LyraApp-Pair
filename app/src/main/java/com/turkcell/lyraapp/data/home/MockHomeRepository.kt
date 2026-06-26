@@ -5,6 +5,11 @@ import javax.inject.Inject
 
 class MockHomeRepository @Inject constructor() : HomeRepository {
 
+    override suspend fun getOfflineFeed(): OfflineFeed = OfflineFeed(
+        recentlyPlayed = emptyList(),
+        downloadedSongs = emptyList(),
+    )
+
     override suspend fun getHomeFeed(): Result<HomeFeed> {
         delay(NETWORK_DELAY_MS)
         return Result.success(

@@ -36,7 +36,7 @@ class NowPlayingViewModel @Inject constructor(
             playerRepository.currentTrack.collect { track ->
                 if (track != null && track.id != lastRecordedTrackId) {
                     lastRecordedTrackId = track.id
-                    recordPlay(track.id)
+                    recordPlay(track)
                 }
                 val downloaded = track?.let { playerRepository.isTrackDownloaded(it.id) } ?: false
                 _uiState.update { state ->
@@ -106,8 +106,8 @@ class NowPlayingViewModel @Inject constructor(
         }
     }
 
-    private fun recordPlay(songId: String) {
-        viewModelScope.launch { homeRepository.recordPlay(songId) }
+    private fun recordPlay(track: com.turkcell.lyraapp.data.player.NowPlayingTrack) {
+        viewModelScope.launch { homeRepository.recordPlay(track) }
     }
 
     private fun seekTo(progress: Float) {

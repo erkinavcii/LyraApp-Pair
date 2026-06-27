@@ -97,4 +97,26 @@ interface LyraApiService {
         @Path("id") playlistId: String,
         @Path("songId") songId: String
     ): retrofit2.Response<Unit>
+
+    // --- Memberships Endpoints ---
+
+    @GET("api/v1/memberships/plans")
+    suspend fun getPlans(): MembershipPlansResponse
+
+    @POST("api/v1/memberships/checkout")
+    suspend fun checkout(
+        @Body request: CheckoutRequest
+    ): CheckoutResponse
+
+    // --- Playback Endpoints ---
+
+    @POST("api/v1/me/playback/next")
+    suspend fun getPlaybackNext(
+        @Body request: PlaybackNextRequest
+    ): PlaybackNextResponse
+
+    @POST("api/v1/me/playback/ad-complete")
+    suspend fun completeAd(
+        @Body request: AdCompleteRequest
+    ): AdCompleteResponse
 }

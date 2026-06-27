@@ -1,5 +1,6 @@
 package com.turkcell.lyraapp.data.auth
 
+import com.turkcell.lyraapp.data.network.MembershipDto
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -52,6 +53,11 @@ interface AuthRepository {
      * Kullanıcının oturum açma durumunu gözlemleyen akış.
      */
     fun isLoggedInFlow(): Flow<Boolean>
+
+    /**
+     * Kullanıcının aktif membership bilgisini döner; free tier için null döner.
+     */
+    fun getMembership(): MembershipDto?
 
     /**
      * Tercih edilen tema modunu (Dark/Light) kaydeder.

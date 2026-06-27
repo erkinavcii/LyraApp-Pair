@@ -166,6 +166,35 @@
   geldiğinde yalnızca implementasyon ve DI bağlaması değişir; ViewModel/Contract etkilenmez.
 
 
+### Premium Abonelik Sistemi
+
+- Karar: **MVI mimarisi; PremiumRepository araciligiyla odeme ve plan yonetimi yapilir. Membership bilgisi AuthRepository.getMembership() ile erisilen in-memory cache uzerinden okunur.**
+
+- Son Guncelleme Tarihi: 27.06.2026
+
+- Kapsam:
+  - `data/network/LyraApiModels.kt` — `MembershipDto`, `MembershipPlanDto`, `CheckoutRequest`, `CheckoutResponse` eklendi; `LyraUser.membership: MembershipDto?` alani eklendi.
+  - `data/premium/PremiumRepository.kt` + `NetworkPremiumRepository.kt` — `getPlans()` ve `checkout()` islemi.
+  - `di/PremiumModule.kt` — `@Binds @Singleton`.
+  - `data/auth/NetworkAuthRepository.kt` — `currentUser: LyraUser?` in-memory cache; `verifyOtp` ve `fetchUserProfile` bu cache'i doldurur; `getMembership()` bu cache'ten okur.
+  - `ui/premium/plans/` — PremiumPlansContract, PremiumPlansViewModel, PremiumPlansScreen.
+  - `ui/premium/payment/` — PaymentContract, PaymentViewModel, PaymentScreen.
+  - `ui/profile/` — premium banner card, `isPremium`/`membershipDaysLeft` state alanlari, `OpenPremium` Intent, `NavigateToPremiumPlans` Effect.
+  - `ui/home/` — `showPremiumExpiryDialog` state, `PremiumExpiryDialog` composable; login sonrasi membership expiry < 3 gun ise dialog gosterilir.
+  - `ui/navigation/` — `PremiumPlans`, `Payment` destinasyonlari; `LyraNavhost` routing.
+  - `ui/icons/LyraIcons.kt` — `Star`, `Refresh`, `Clock` ikonlari eklendi.
+
+- In-memory cache tercihi: `TokenStorage` `EncryptedSharedPreferences` kullandigindan complex nesne serilestirmesi gerektirmeden `LyraUser` nesnesini dogrudan memory'de tutmak tercih edildi. Uygulama yeniden acildiginda `fetchUserProfile()` cache'i yeniler.
+
+- Odeme akisi: `PremiumPlansScreen` → plan sec → `PaymentScreen` → kart bilgisi + `/api/v1/memberships/checkout` → basari → Profile'a don. Hata durumunda (402) Snackbar gosterilir.
+
+- Expiry dialog akisi: `HomeViewModel.init` → `authRepository.getMembership()` → `daysLeft <= 3` → `showPremiumExpiryDialog = true` → kullanici "Aylik abonelige gec" veya "30 gun yenile" tusuna basar → `PremiumPlansScreen`'e navigasyon.
+
+- Test kartlari (API mock): `4242 4242 4242 4242` = basarili, `4000 0000 0000 0002` = reddedildi.
+
+- Sebep: Backend premium endpoint'leri aktif (`/api/v1/memberships/plans`, `/api/v1/memberships/checkout`). Gercek odeme altyapisi olmadigi icin API mock kart numaralari kullanilmaktadir.
+
+
 ### Kütüphane, Playlist Detay ve Yeni Çalma Listesi Ekranları
 
 - Karar: **MVI mimarisi, stub repository ve FavoritesRepository entegrasyonu**.

@@ -27,6 +27,8 @@ import com.turkcell.lyraapp.ui.home.HomeRoute
 import com.turkcell.lyraapp.ui.library.LibraryRoute
 import com.turkcell.lyraapp.ui.library.create.NewPlaylistRoute
 import com.turkcell.lyraapp.ui.library.detail.PlaylistDetailRoute
+import com.turkcell.lyraapp.ui.premium.payment.PaymentRoute
+import com.turkcell.lyraapp.ui.premium.plans.PremiumPlansRoute
 import com.turkcell.lyraapp.ui.profile.ProfileRoute
 import com.turkcell.lyraapp.ui.nowplaying.NowPlayingRoute
 import com.turkcell.lyraapp.ui.search.SearchRoute
@@ -132,6 +134,11 @@ fun LyraNavHost(
                             launchSingleTop = true
                         }
                     },
+                    onNavigateToPremiumPlans = {
+                        navController.navigate(LyraDestination.PremiumPlans.route) {
+                            launchSingleTop = true
+                        }
+                    },
                     onToggleTheme = onThemeToggle,
                 )
             }
@@ -192,7 +199,41 @@ fun LyraNavHost(
                 )
             }
 
-            composable(LyraDestination.Profile.route) { ProfileRoute() }
+            composable(LyraDestination.Profile.route) {
+                ProfileRoute(
+                    onNavigateToPremiumPlans = {
+                        navController.navigate(LyraDestination.PremiumPlans.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
+
+            composable(LyraDestination.PremiumPlans.route) {
+                PremiumPlansRoute(
+                    onNavigateToPayment = { planId ->
+                        navController.navigate("payment/$planId") {
+                            launchSingleTop = true
+                        }
+                    },
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = LyraDestination.Payment.route,
+                arguments = listOf(navArgument("planId") { type = NavType.StringType }),
+            ) {
+                PaymentRoute(
+                    onNavigateBack = { navController.popBackStack() },
+                    onPaymentSuccess = {
+                        navController.navigate(LyraDestination.Profile.route) {
+                            popUpTo(LyraDestination.Home.route)
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
         }
     }
 }

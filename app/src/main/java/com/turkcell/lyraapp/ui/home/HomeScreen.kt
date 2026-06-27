@@ -1,5 +1,6 @@
 package com.turkcell.lyraapp.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,6 +44,7 @@ fun HomeRoute(
     onNavigateToLogin: () -> Unit,
     onNavigateToNowPlaying: () -> Unit,
     onNavigateToPlaylistDetail: (String) -> Unit,
+    onNavigateToPremiumPlans: () -> Unit,
     onToggleTheme: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -64,6 +66,7 @@ fun HomeRoute(
                 HomeEffect.NavigateToNowPlaying -> onNavigateToNowPlaying()
                 is HomeEffect.NavigateToPlaylistDetail -> onNavigateToPlaylistDetail(effect.playlistId)
                 is HomeEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                HomeEffect.NavigateToPremiumPlans -> onNavigateToPremiumPlans()
             }
         }
     }
@@ -207,6 +210,113 @@ fun HomeScreen(
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
+
+                if (state.showPremiumExpiryDialog) {
+                    PremiumExpiryDialog(
+                        daysLeft = state.premiumDaysLeft,
+                        onSubscribeMonthly = { onIntent(HomeIntent.NavigateToPremiumFromDialog) },
+                        onRenewOneTime = { onIntent(HomeIntent.NavigateToPremiumFromDialog) },
+                        onDismiss = { onIntent(HomeIntent.DismissPremiumExpiryDialog) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PremiumExpiryDialog(
+    daysLeft: Int,
+    onSubscribeMonthly: () -> Unit,
+    onRenewOneTime: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 32.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                .background(Color(0xFF2A2020))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = LyraIcons.Clock,
+                contentDescription = null,
+                tint = Color(0xFFF4A0B5),
+                modifier = Modifier.size(40.dp),
+            )
+            Text(
+                text = "Premium'un $daysLeft gun sonra bitiyor",
+                style = androidx.compose.material3.MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Text(
+                text = "Tek seferlik erisiniz sona ermek uzere. Kesintisiz dinlemeye devam etmek icin yenile ya da aylik abonelige gec.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.7f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            Spacer(Modifier.height(4.dp))
+            Button(
+                onClick = onSubscribeMonthly,
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF4A0B5),
+                ),
+            ) {
+                Icon(
+                    imageVector = LyraIcons.Refresh,
+                    contentDescription = null,
+                    tint = Color(0xFF5A1E35),
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Aylik abonelige gec",
+                    color = Color(0xFF5A1E35),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+            Button(
+                onClick = onRenewOneTime,
+                modifier = Modifier.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(50.dp),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                ),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+            ) {
+                Icon(
+                    imageVector = LyraIcons.Refresh,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "30 gun yenile",
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "Daha sonra",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         }
     }

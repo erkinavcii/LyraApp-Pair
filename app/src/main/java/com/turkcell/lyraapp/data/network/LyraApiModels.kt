@@ -78,6 +78,7 @@ data class LyraUser(
     @SerializedName("birthDate") val birthDate: String?,
     @SerializedName("createdAt") val createdAt: String,
     @SerializedName("profileCompleted") val profileCompleted: Boolean,
+    @SerializedName("membership") val membership: MembershipDto? = null,
 )
 
 data class OtpVerifyData(

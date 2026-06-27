@@ -22,6 +22,8 @@ data class HomeUiState(
     val currentTrack: NowPlayingTrack? = null,
     val isCurrentTrackFavorited: Boolean = false,
     val isPlaying: Boolean = false,
+    val showPremiumExpiryDialog: Boolean = false,
+    val premiumDaysLeft: Int = 0,
 )
 
 sealed interface HomeIntent {
@@ -34,6 +36,8 @@ sealed interface HomeIntent {
     data object ToggleFavorite : HomeIntent
     data object TogglePlayPause : HomeIntent
     data class PlaylistClicked(val playlistId: String) : HomeIntent
+    data object DismissPremiumExpiryDialog : HomeIntent
+    data object NavigateToPremiumFromDialog : HomeIntent
 }
 
 sealed interface HomeEffect {
@@ -41,4 +45,5 @@ sealed interface HomeEffect {
     data object NavigateToLogin : HomeEffect
     data object NavigateToNowPlaying : HomeEffect
     data class NavigateToPlaylistDetail(val playlistId: String) : HomeEffect
+    data object NavigateToPremiumPlans : HomeEffect
 }

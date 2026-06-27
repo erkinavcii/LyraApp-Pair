@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,10 +53,20 @@ class ProfileViewModel @Inject constructor(
             authRepository.fetchUserProfile()
                 .onSuccess {
                     val updatedName = authRepository.getLoggedInUserName().orEmpty()
+                    val membership = authRepository.getMembership()
+                    val daysLeft = membership?.expiresAt?.let { expiresAt ->
+                        runCatching {
+                            val expires = OffsetDateTime.parse(expiresAt)
+                            ChronoUnit.DAYS.between(OffsetDateTime.now(), expires).toInt().coerceAtLeast(0)
+                        }.getOrNull()
+                    }
                     _uiState.update {
                         it.copy(
                             displayName = updatedName,
                             initials = computeInitials(updatedName),
+                            isPremium = membership?.status == "active",
+                            membershipDaysLeft = daysLeft,
+                            membershipType = membership?.type,
                         )
                     }
                 }
@@ -70,6 +82,9 @@ class ProfileViewModel @Inject constructor(
             ProfileIntent.OpenNotifications -> Unit
             ProfileIntent.OpenPrivacy -> Unit
             ProfileIntent.OpenHelpAndSupport -> Unit
+            ProfileIntent.OpenPremium -> viewModelScope.launch {
+                _effect.send(ProfileEffect.NavigateToPremiumPlans)
+            }
             ProfileIntent.Logout -> {
                 viewModelScope.launch {
                     authRepository.logout()

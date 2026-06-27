@@ -2,6 +2,8 @@ package com.turkcell.lyraapp.data.auth
 
 import android.content.Context
 import com.turkcell.lyraapp.data.network.LyraApiService
+import com.turkcell.lyraapp.data.network.LyraUser
+import com.turkcell.lyraapp.data.network.MembershipDto
 import com.turkcell.lyraapp.data.network.OtpRequest
 import com.turkcell.lyraapp.data.network.OtpVerifyRequest
 import com.turkcell.lyraapp.data.network.UpdateInfoRequest
@@ -19,6 +21,9 @@ class NetworkAuthRepository @Inject constructor(
 ) : AuthRepository {
 
     private val prefs = context.getSharedPreferences("lyra_prefs", Context.MODE_PRIVATE)
+
+    @Volatile
+    private var currentUser: LyraUser? = null
 
     override suspend fun requestOtp(phone: String): Result<Boolean> {
         return try {
@@ -40,7 +45,8 @@ class NetworkAuthRepository @Inject constructor(
             val displayName = verifyData.user.displayName ?: "${verifyData.user.firstName ?: ""} ${verifyData.user.lastName ?: ""}".trim()
             tokenStorage.saveUserName(displayName)
             tokenStorage.setLoggedIn(true)
-            
+            currentUser = verifyData.user
+
             Result.success(verifyData.firstTime)
         } catch (e: Exception) {
             Result.failure(e)
@@ -79,6 +85,7 @@ class NetworkAuthRepository @Inject constructor(
         } catch (e: Exception) {
             Result.success(Unit)
         } finally {
+            currentUser = null
             tokenStorage.clear()
             tokenStorage.setLoggedIn(false)
         }
@@ -95,11 +102,14 @@ class NetworkAuthRepository @Inject constructor(
             val displayName = user.displayName ?: "${user.firstName ?: ""} ${user.lastName ?: ""}".trim()
             tokenStorage.saveUserName(displayName)
             tokenStorage.saveUserPhone(user.phone)
+            currentUser = user
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
+    override fun getMembership(): MembershipDto? = currentUser?.membership
 
     override fun isUserLoggedIn(): Boolean {
         return tokenStorage.isLoggedIn()

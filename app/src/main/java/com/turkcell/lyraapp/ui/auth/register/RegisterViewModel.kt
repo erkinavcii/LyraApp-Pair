@@ -32,7 +32,10 @@ class RegisterViewModel @Inject constructor(
         when (intent) {
             is RegisterIntent.FirstNameChanged -> updateForm { it.copy(firstName = intent.value) }
             is RegisterIntent.LastNameChanged -> updateForm { it.copy(lastName = intent.value) }
-            is RegisterIntent.PhoneNumberChanged -> updateForm { it.copy(phoneNumber = intent.value) }
+            is RegisterIntent.PhoneNumberChanged -> updateForm {
+                val filtered = intent.value.filter { c -> c.isDigit() }.take(10)
+                it.copy(phoneNumber = filtered)
+            }
             is RegisterIntent.PasswordChanged -> updateForm { it.copy(password = intent.value) }
             is RegisterIntent.ConfirmPasswordChanged -> updateForm { it.copy(confirmPassword = intent.value) }
             is RegisterIntent.TermsAcceptedChanged -> updateForm { it.copy(isTermsAccepted = intent.value) }
@@ -83,10 +86,12 @@ class RegisterViewModel @Inject constructor(
     }
 }
 
+private val phoneRegex = Regex("^[0-9]{10}$")
+
 private fun RegisterUiState.isFormValid(): Boolean =
     firstName.isNotBlank() &&
             lastName.isNotBlank() &&
-            phoneNumber.length >= 10 &&
+            phoneRegex.matches(phoneNumber) &&
             password.length >= 6 &&
             password == confirmPassword &&
             isTermsAccepted

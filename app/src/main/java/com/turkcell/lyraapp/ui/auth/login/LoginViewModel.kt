@@ -28,7 +28,12 @@ class LoginViewModel @Inject constructor(
     fun onIntent(intent: LoginIntent) {
         when (intent) {
             is LoginIntent.PhoneNumberChanged -> updateForm {
+<<<<<<< Updated upstream
                 it.copy(phoneNumber = intent.value.filter { c -> c.isDigit() }.take(10))
+=======
+                val filtered = intent.value.filter { c -> c.isDigit() }.take(10)
+                it.copy(phoneNumber = filtered)
+>>>>>>> Stashed changes
             }
             is LoginIntent.Submit -> submit()
         }
@@ -56,6 +61,10 @@ class LoginViewModel @Inject constructor(
     }
 }
 
+<<<<<<< Updated upstream
 private val phoneRegex = Regex("^5[0-9]{9}$")
+=======
+private val phoneRegex = Regex("^[0-9]{10}$")
+>>>>>>> Stashed changes
 
 private fun LoginUiState.isFormValid(): Boolean = phoneRegex.matches(phoneNumber)

@@ -29,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,13 +41,18 @@ import com.turkcell.lyraapp.ui.icons.LyraIcons
 
 @Composable
 fun ProfileRoute(
+    onNavigateToPremiumPlans: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.effect.collect { }
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                ProfileEffect.NavigateToPremiumPlans -> onNavigateToPremiumPlans()
+            }
+        }
     }
 
     ProfileScreen(
@@ -79,6 +86,17 @@ fun ProfileScreen(
                 initials = state.initials,
                 displayName = state.displayName,
                 playlistCount = state.playlistCount,
+                isPremium = state.isPremium,
+                membershipDaysLeft = state.membershipDaysLeft,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            PremiumBannerCard(
+                isPremium = state.isPremium,
+                daysLeft = state.membershipDaysLeft,
+                onClick = { onIntent(ProfileIntent.OpenPremium) },
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
 
             Spacer(Modifier.height(24.dp))
@@ -128,6 +146,8 @@ private fun ProfileHeader(
     initials: String,
     displayName: String,
     playlistCount: Int,
+    isPremium: Boolean,
+    membershipDaysLeft: Int?,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -158,8 +178,13 @@ private fun ProfileHeader(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
+        val premiumSubtitle = when {
+            isPremium && membershipDaysLeft != null -> "@lyrauser · Premium · $membershipDaysLeft gun"
+            isPremium -> "@lyrauser · Premium"
+            else -> "@lyrauser"
+        }
         Text(
-            text = "@lyrauser · Premium",
+            text = premiumSubtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -379,4 +404,60 @@ private fun RowDivider() {
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
         thickness = 0.5.dp,
     )
+}
+
+@Composable
+private fun PremiumBannerCard(
+    isPremium: Boolean,
+    daysLeft: Int?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val gradient = Brush.horizontalGradient(
+        colors = listOf(Color(0xFFF4A0B5), Color(0xFFF9D4A5)),
+    )
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(gradient)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = LyraIcons.Star,
+                contentDescription = null,
+                tint = Color(0xFF7B2D50),
+                modifier = Modifier.size(28.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                val title = if (isPremium && daysLeft != null) "Premium · $daysLeft gun kaldi"
+                else if (isPremium) "Premium"
+                else "Premium'a gec"
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF5A1E35),
+                )
+                val subtitle = if (isPremium) "Yenile ya da abonelige gec"
+                else "Reklamsiz, sinırsiz muzik"
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF7B3050),
+                )
+            }
+            Icon(
+                imageVector = LyraIcons.ArrowForward,
+                contentDescription = null,
+                tint = Color(0xFF7B2D50),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
 }

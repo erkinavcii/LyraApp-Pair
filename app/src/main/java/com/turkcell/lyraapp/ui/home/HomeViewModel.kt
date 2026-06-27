@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -48,6 +50,7 @@ class HomeViewModel @Inject constructor(
         observeTheme()
         observeCurrentTrack()
         observeIsPlaying()
+        checkPremiumExpiry()
     }
 
     fun onIntent(intent: HomeIntent) {
@@ -67,6 +70,15 @@ class HomeViewModel @Inject constructor(
             }
             is HomeIntent.PlaylistClicked -> viewModelScope.launch {
                 _effect.send(HomeEffect.NavigateToPlaylistDetail(intent.playlistId))
+            }
+            is HomeIntent.DismissPremiumExpiryDialog -> _uiState.update {
+                it.copy(showPremiumExpiryDialog = false)
+            }
+            is HomeIntent.NavigateToPremiumFromDialog -> {
+                _uiState.update { it.copy(showPremiumExpiryDialog = false) }
+                viewModelScope.launch {
+                    _effect.send(HomeEffect.NavigateToPremiumPlans)
+                }
             }
         }
     }
@@ -179,6 +191,18 @@ class HomeViewModel @Inject constructor(
             context.startForegroundService(intent)
         } else {
             context.startService(intent)
+        }
+    }
+
+    private fun checkPremiumExpiry() {
+        val membership = authRepository.getMembership() ?: return
+        if (membership.status != "active") return
+        val daysLeft = runCatching {
+            val expires = OffsetDateTime.parse(membership.expiresAt)
+            ChronoUnit.DAYS.between(OffsetDateTime.now(), expires).toInt().coerceAtLeast(0)
+        }.getOrNull() ?: return
+        if (daysLeft <= 3) {
+            _uiState.update { it.copy(showPremiumExpiryDialog = true, premiumDaysLeft = daysLeft) }
         }
     }
 

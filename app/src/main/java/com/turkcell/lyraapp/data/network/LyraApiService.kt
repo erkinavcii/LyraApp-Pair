@@ -119,4 +119,9 @@ interface LyraApiService {
     suspend fun completeAd(
         @Body request: AdCompleteRequest
     ): AdCompleteResponse
+
+    @DELETE("api/v1/me/playlists/{id}")
+    suspend fun deletePlaylist(
+        @Path("id") playlistId: String
+    ): DeletePlaylistResponse
 }

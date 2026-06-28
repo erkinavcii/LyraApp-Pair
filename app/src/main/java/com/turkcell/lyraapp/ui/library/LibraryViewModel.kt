@@ -73,6 +73,14 @@ class LibraryViewModel @Inject constructor(
                     _effect.send(LibraryEffect.NavigateToNewPlaylist)
                 }
             }
+            is LibraryIntent.DeletePlaylist -> {
+                viewModelScope.launch {
+                    libraryRepository.deletePlaylist(intent.playlistId)
+                        .onFailure {
+                            _effect.send(LibraryEffect.ShowError(it.message ?: "Silme işlemi başarısız."))
+                        }
+                }
+            }
         }
     }
 

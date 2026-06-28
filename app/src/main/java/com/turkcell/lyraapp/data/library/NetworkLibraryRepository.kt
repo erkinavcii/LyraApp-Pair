@@ -129,10 +129,19 @@ class NetworkLibraryRepository @Inject constructor(
     }
 
     override suspend fun deletePlaylist(id: String): Result<Unit> = withContext(Dispatchers.IO) {
-        _playlists.update { current ->
-            current.filter { it.id != id }
+        try {
+            val response = apiService.deletePlaylist(id)
+            if (response.data.deleted) {
+                _playlists.update { current ->
+                    current.filter { it.id != id }
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Çalma listesi silinemedi."))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        Result.success(Unit)
     }
 
     override suspend fun getAvailableTracks(): Result<List<NowPlayingTrack>> = withContext(Dispatchers.IO) {

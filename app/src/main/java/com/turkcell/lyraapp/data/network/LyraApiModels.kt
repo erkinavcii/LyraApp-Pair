@@ -223,3 +223,13 @@ data class AdCompleteDataDto(
 data class AdCompleteResponse(
     @SerializedName("data") val data: AdCompleteDataDto
 )
+
+// --- Delete Playlist DTOs ---
+
+data class DeletePlaylistDataDto(
+    @SerializedName("deleted") val deleted: Boolean
+)
+
+data class DeletePlaylistResponse(
+    @SerializedName("data") val data: DeletePlaylistDataDto
+)

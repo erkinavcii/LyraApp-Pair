@@ -31,9 +31,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -133,7 +137,8 @@ fun LibraryScreen(
                             playlists = state.filteredPlaylists,
                             onPlaylistClick = { onIntent(LibraryIntent.ClickPlaylist(it)) },
                             onFavoritesClick = { onIntent(LibraryIntent.ClickFavorites) },
-                            onDownloadsClick = { onIntent(LibraryIntent.ClickPlaylist("downloads")) }
+                            onDownloadsClick = { onIntent(LibraryIntent.ClickPlaylist("downloads")) },
+                            onDeletePlaylistClick = { onIntent(LibraryIntent.DeletePlaylist(it)) }
                         )
                     }
                     LibraryTab.Artists -> {
@@ -362,7 +367,8 @@ private fun PlaylistsContent(
     playlists: List<Playlist>,
     onPlaylistClick: (String) -> Unit,
     onFavoritesClick: () -> Unit,
-    onDownloadsClick: () -> Unit
+    onDownloadsClick: () -> Unit,
+    onDeletePlaylistClick: (String) -> Unit
 ) {
     if (isGridView) {
         LazyVerticalGrid(
@@ -410,7 +416,8 @@ private fun PlaylistsContent(
             items(playlists, key = { it.id }) { playlist ->
                 ListPlaylistItem(
                     playlist = playlist,
-                    onClick = { onPlaylistClick(playlist.id) }
+                    onClick = { onPlaylistClick(playlist.id) },
+                    onDeleteClick = { onDeletePlaylistClick(playlist.id) }
                 )
             }
         }
@@ -589,8 +596,11 @@ private fun ListFavoritesItem(
 @Composable
 private fun ListPlaylistItem(
     playlist: Playlist,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -621,13 +631,37 @@ private fun ListPlaylistItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        IconButton(onClick = {}) {
-            Icon(
-                imageVector = LyraIcons.MoreVert,
-                contentDescription = "Diğer seçenekler",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
+        if (playlist.isOwnedByUser) {
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = LyraIcons.MoreVert,
+                        contentDescription = "Diğer seçenekler",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Sil", color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            showMenu = false
+                            onDeleteClick()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = LyraIcons.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+                }
+            }
         }
     }
 }

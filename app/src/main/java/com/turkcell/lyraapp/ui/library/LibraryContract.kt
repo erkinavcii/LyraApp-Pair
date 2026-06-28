@@ -28,6 +28,7 @@ sealed interface LibraryIntent {
     data class ClickPlaylist(val playlistId: String) : LibraryIntent
     data object ClickFavorites : LibraryIntent
     data object CreatePlaylistClick : LibraryIntent
+    data class DeletePlaylist(val playlistId: String) : LibraryIntent
 }
 
 sealed interface LibraryEffect {

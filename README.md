@@ -36,7 +36,10 @@ Uygulamanın genel akışını, özelliklerini ve Room veritabanı (local cache)
 
 
 
-https://github.com/user-attachments/assets/54a74bfd-0304-4168-928b-6f8425007d22
+
+
+https://github.com/user-attachments/assets/27c60e64-e95e-43ba-aa2b-a55f1b542ec3
+
 
 
 ---

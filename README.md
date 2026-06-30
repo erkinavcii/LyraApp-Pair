@@ -30,6 +30,14 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 ---
 
+## 🎥 Proje Detayları & Room Database Mantığı Videosu
+
+Uygulamanın genel akışını, özelliklerini ve Room veritabanı (local cache) ile offline-first çalışma mantığının detaylı açıklamasını aşağıdaki tanıtım videosunda bulabilirsiniz:
+
+<video src="docs/images/LyraApp-Pair.mp4" width="100%" controls></video>
+
+---
+
 ## 🛠️ Teknolojiler ve Bağımlılıklar
 
 *   **Core:** Kotlin, Coroutines, Flow.

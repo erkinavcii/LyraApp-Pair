@@ -9,9 +9,6 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 
 
-https://github.com/user-attachments/assets/5d3ae37c-5f12-43c0-aa37-cdb0fa72c732
-
-
 
 ## 📸 Ekran Görüntüleri & Akışlar
 

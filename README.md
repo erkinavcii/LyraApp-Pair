@@ -8,27 +8,25 @@ Uygulamanın temel amacı, kullanıcılara hem çevrimiçi (online) hem de tamam
 
 ## 📸 Ekran Görüntüleri & Akışlar
 
-*(Görsellerinizi eklemek için `docs/images/` klasörüne ilgili dosyaları kaydedip aşağıdaki bağlantıları güncelleyebilirsiniz.)*
-
 | 1. Telefon Girişi (1/3) | 2. OTP Doğrulama (2/3) | 3. Bilgileri Tamamla (3/3) |
 | :---: | :---: | :---: |
-| ![Telefon Giriş Ekranı Görseli](docs/images/login_screen.png) <br> *[Buraya Giriş Ekranı Gelecek]* | ![OTP Ekranı Görseli](docs/images/otp_screen.png) <br> *[Buraya OTP Ekranı Gelecek]* | ![Profil Tamamlama Görseli](docs/images/complete_profile_screen.png) <br> *[Buraya Profil Tamamlama Gelecek]* |
+| ![Telefon Giriş Ekranı](docs/images/login_screen.png) | ![OTP Ekranı](docs/images/otp_screen.png) | ![Profil Tamamlama](docs/images/complete_profile_screen.png) |
 
 | 4. Ana Sayfa (Home) | 5. Arama Ekranı (Search) | 6. Şimdi Çalıyor (Now Playing) |
 | :---: | :---: | :---: |
-| ![Ana Sayfa Görseli](docs/images/home_screen.png) <br> *[Buraya Ana Sayfa Gelecek]* | ![Arama Ekranı Görseli](docs/images/search_screen.png) <br> *[Buraya Arama Ekranı Gelecek]* | ![Şimdi Çalıyor Görseli](docs/images/now_playing_screen.png) <br> *[Buraya Şimdi Çalıyor Gelecek]* |
+| ![Ana Sayfa](docs/images/home_screen.png) | ![Arama Ekranı](docs/images/search_screen.png) | ![Şimdi Çalıyor](docs/images/now_playing_screen.png) |
 
 | 7. Kütüphane (Library) | 8. Çalma Listesi Detay | 9. Yeni Çalma Listesi Ekle |
 | :---: | :---: | :---: |
-| ![Kütüphane Görseli](docs/images/library_screen.png) <br> *[Buraya Kütüphane Gelecek]* | ![Playlist Detay Görseli](docs/images/playlist_detail_screen.png) <br> *[Buraya Playlist Detay Gelecek]* | ![Çalma Listesi Ekle Görseli](docs/images/new_playlist_screen.png) <br> *[Buraya Yeni Çalma Listesi Gelecek]* |
+| ![Kütüphane](docs/images/library_screen.png) | ![Playlist Detay](docs/images/playlist_detail_screen.png) | ![Yeni Çalma Listesi](docs/images/new_playlist_screen.png) |
 
-| 10. Profil & Premium | 11. Premium Plan Seçimi | 12. Kart Ödeme Formu |
+| 10. Beğenilen Şarkılar | 11. Profil | 12. Premium Plan Seçimi |
 | :---: | :---: | :---: |
-| ![Profil Görseli](docs/images/profile_screen.png) <br> *[Buraya Profil Ekranı Gelecek]* | ![Plan Seçim Görseli](docs/images/premium_plans_screen.png) <br> *[Buraya Plan Seçimi Gelecek]* | ![Ödeme Formu Görseli](docs/images/payment_screen.png) <br> *[Buraya Ödeme Formu Gelecek]* |
+| ![Beğenilen Şarkılar](docs/images/favorites_screen.png) | ![Profil](docs/images/profile_screen.png) | ![Premium Plan Seçimi](docs/images/premium_plans_screen.png) |
 
-| 13. Ödeme Başarılı | 14. Yenileme Hatırlatıcı |
+| 13. Kart Ödeme Formu | 14. Ödeme Başarılı |
 | :---: | :---: |
-| ![Ödeme Başarılı Görseli](docs/images/payment_success_screen.png) <br> *[Buraya Ödeme Başarılı Gelecek]* | ![Yenileme Popup Görseli](docs/images/renewal_popup.png) <br> *[Buraya Yenileme Hatırlatıcı Popup Gelecek]* |
+| ![Kart Ödeme Formu](docs/images/payment_screen.png) | ![Ödeme Başarılı](docs/images/payment_success_screen.png) |
 
 ---
 
